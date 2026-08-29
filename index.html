@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<!-- Plots elevation profile with drill core data from Bayern 
+Dependencies:
+ https://github.com/Turfjs/turf
+ https://github.com/maplibre/maplibre-gl-js/
+ 
+-->
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8'>
+    <title>GEO Profile BY</title>
+    <meta name="author" content="Filippe F.">
+
+    <link rel="icon" type="image/svg+xml" href="src/img/favicon.svg">
+
+    <!-- Maplibre -->
+    <link rel='stylesheet' href='src/js/maplibre_6-5/dist/maplibre-gl.css' />
+    <!-- <script src='src/js/maplibre_6-5/dist/maplibre-gl-dev.mjs'></script> -->
+    <!-- Turf -->
+    <script src="src/js/turf.min.js" charset="utf-8"></script>
+     <!-- style -->
+    <link rel='stylesheet' href='src/css/style.css'>
+    <!-- Map definitions, layers style -->
+    <script src='src/js/map_defs.js'></script>
+    <!-- Profile tools -->
+    <script src='src/js/profile_tool.js'></script>
+    <!-- Layer, Profile Controls -->
+    <script src='src/js/custom_control.js'></script>
+    <!-- Drill core data -->
+    <script src='src/js/dc_data.js'></script>
+
+  </head>
+  <body>
+
+    <div id="map"></div>
+
+    <div id="el_profile">
+        <!-- <input type="button" id="btn_toggle_profile" value="Create Profile"></input> -->
+        <div id="profile_container" style="display: none;">
+            <svg id= "ele_profile" viewBox="0 0 1000 250" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Clip polygon  -->
+                    <clipPath id="poly-clip">
+                        <use href="#elevation-profile-poly" />
+                    </clipPath>
+                </defs>
+                <polygon id="elevation-profile-poly" points="20,20 950,20 950,230 20,230" fill="none" stroke="black"/>
+                <!-- All  items in clip-group are clipped to poly -->
+                <g id= "clip-group" clip-path="url(#poly-clip)">
+                    <line id="cursor_ele_line" x1="20" y1="230" x2="20" y2="20" stroke="black" stroke-width="1"/>
+                    <g id="dc-profile-groups"></g>
+                </g>
+                <g id= "profile_txt_group" >
+                    <text id="ele_txt" text-anchor="middle" transform="translate(5,120) rotate(90)" class="ele_profile_txt">Elevation (m)</text>
+                    <text id="min_ele_txt" x="2" y="20" class="ele_profile_txt">_</text>
+                    <text id="max_ele_txt" x="2" y="230" class="ele_profile_txt">_</text>
+                    
+                    <text id="max_dist_txt" text-anchor="end"  x="980" y="248" class="ele_profile_txt">_</text>
+                    <text id="dist_txt" text-anchor="middle" x="480" y="248" class="ele_profile_txt">Distance (km)</text>
+                </g>
+
+            </svg>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as maplibregl from './src/js/maplibre_6-5/dist/maplibre-gl.mjs';
+
+        // Elevation Profile
+        const v_ex = 2.5 // Vertical exageration #TODO scale svgw,h 
+        const svg_horz_margin = 25; // horizontal, vertical margin
+        const svg_vert_margin = 25;
+        const svg_w = 950;  // svg width, heigth
+        const svg_h = 210;
+        const profile_extra_depth = 200; // Extra depth under minimum elevation (m)
+        const n_coords = 100; // Number of coordinates to sample elevation along profile line
+
+        const profile_w_px = 20;    //Profile stroke width in px
+        // const buffer_profile = 0.5 // Buffer along line to look for drill core intercept (km) #calculated from profile_w_px for given zoom 
+        var profile_distance = 0 //PLaceholder profile distance from start to end pt (km)
+        const profile_tool_active = false;
+        document.profile_tool_active = profile_tool_active; // Profile is active
+        var clickedCoords = []; //PLaceholder coordinates of profile
+
+        const dc_w = 10; // Drill core profile width
+
+        // Initialize the map
+        const geojson_profile = {
+            'type': 'FeatureCollection',
+            'features': [
+                // LINE
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'LineString',
+                        'coordinates': [[0, 0]]
+                    }
+                },
+                // START POINT
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': []
+                    }
+                },
+                // END POINT
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': []
+                    }
+                }
+            ]
+        };
+        //add geojson sources to map style
+        map_style.sources["dc_lyr_src"]["data"] = dc_geojson
+        map_style.sources["profile_lyr_src"]["data"] = geojson_profile
+
+        const map = new maplibregl.Map({
+            container: 'map', // ID of the HTML element
+            style: map_style,
+            zoom: 9,
+            center: get_location() ?? [12,50],
+        });
+        // Add default navigation controls (zoom/rotation buttons), scale and custom controls
+        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+        map.addControl(new maplibregl.ScaleControl({
+            maxWidth: 100, 
+            unit: 'metric'}), 
+        'bottom-left'); 
+        const layerControl = new LayerControl(layerList);
+        map.addControl(layerControl, 'top-right');
+        const profileControl = new ProfileControl();
+        map.addControl(profileControl, 'top-right');
+
+        // Hover on  profile line
+        map.on('load', async () => {
+            map.on('mousemove', 'profile-layer', (e) => {
+                map.getCanvas().style.cursor = 'crosshair';
+                // console.log("Mousemove event on profile-layer:", e.lngLat);
+                if (clickedCoords.length == 2) {
+                    const start_pt = turf.point(clickedCoords[0]);
+                    const end_pt = turf.point(clickedCoords[1]);
+                    const cur_pt = turf.point([e.lngLat.lng,e.lngLat.lat]);
+                    const hover_distance = turf.distance(start_pt, cur_pt, {units: "kilometers"});
+                    // profile_distance = calc_distance(start_pt,end_pt); calculated at second click
+                    // make sure is within profile 
+                    const dist_ratio = Math.min(Math.max(hover_distance/profile_distance,0),1) 
+                    const line_x = svg_horz_margin + svg_w*dist_ratio;
+                    let svg_line = document.getElementById("cursor_ele_line");
+                    svg_line.setAttribute("x1", line_x);
+                    svg_line.setAttribute("x2", line_x);
+                }
+            });
+
+            // When the mouse leaves the profile layer, return line to left
+            map.on('mouseleave', 'profile-layer', () => {
+                map.getCanvas().style.cursor = '';
+                let svg_line = document.getElementById("ele_profile").querySelector("line");
+                svg_line.setAttribute("x1", svg_horz_margin);
+                svg_line.setAttribute("x2", svg_horz_margin);
+            });
+
+            // on click WMS layers with info: GetFeatureInfo, application/geo+json
+        });
+
+
+        const dc_popup = new maplibregl.Popup({
+            closeButton: false,
+            closeOnClick: false
+        });
+
+        //POPUP DRILL CORES
+        map.on('mousemove', 'dc-layer', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const obj_id = e.features[0].properties["oid"];
+            // console.log(obj_id);
+            // Ensure that if the map is zoomed out such that multiple
+            // copies of the feature are visible, the popup appears
+            // over the copy being pointed to.
+            // while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            //     coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            // }
+            const cur_dc_data = dc_layer_dict[obj_id] ?? {"dc_h":"N/A","max_d":"N/A"};
+            // console.log("Clicked drill core:", obj_id, "Data:", cur_dc_data);
+            const popup_html = `<strong>${obj_id}</strong> <br> 
+                          <a>Altitude: ${cur_dc_data["dc_h"]} m </a> <br> 
+                          <a>Max Depth: ${cur_dc_data["max_d"]} m</a>`;
+            
+            dc_popup.setLngLat(coordinates).setHTML(popup_html).addTo(map);
+
+        });
+
+        // Change the cursor to a pointer when the mouse is over the places layer.
+        // map.on('mouseenter', 'dc-layer', () => {
+        //     map.getCanvas().style.cursor = 'pointer';
+        // });
+
+        // Change it back to a pointer when it leaves.
+        map.on('mouseleave', 'dc-layer', () => {
+            if (document.profile_tool_active) {
+                map.getCanvas().style.cursor = 'crosshair';
+            }
+            else{
+                map.getCanvas().style.cursor = '';
+            }
+            dc_popup.remove();
+        });
+
+        
+        // Profile
+
+        async function show_elevation_profile(line_coords){
+            // get coordinates along profile, 
+            // get elevation at coordinates, 
+            // get drill cores that intersect profile (+ buffer), 
+            // plot elevation profile and drill cores
+            // svg coordinates 
+            // |0,0 -----> X
+            // |
+            // v Y      100,100
+            // 
+            const start_pt = clickedCoords[0];
+            const end_pt = clickedCoords[1];
+            const coord_list = make_coord_list(start_pt,end_pt,n_coords);
+            // console.log("Coordinate list ", coord_list);
+            // Call the function to create the profile
+            var coord_ele_list =[];
+            try {
+                coord_ele_list = await get_elevation_list(coord_list);
+            } catch (error) {
+                coord_ele_list = await get_elevation_list_multi(coord_list);
+            }
+            // const coord_ele_list = await get_elevation_list(coord_list);
+            // console.log(coord_ele_list);
+            const ele_list = coord_ele_list.map(ele => ele[2]); // Extract the elevation values
+            const max_ele = Math.max(...ele_list);
+            const min_ele = Math.min(...ele_list) - profile_extra_depth; // Add buffer below minimum elevation
+            const dh = max_ele - min_ele;
+            // const m2px_v = (dh*1e3)/svg_h;
+            // const m2px_h = profile_distance/svg_w;
+            // console.log(`v ex: ${m2px_v/m2px_h}`)
+            var poly_str = `${svg_horz_margin},${svg_h+svg_vert_margin} `;
+            for (let i = 0; i < ele_list.length; i++) {
+                let x = svg_horz_margin + (i * svg_w / (ele_list.length-1)); // Scale x to fit within the SVG width
+                let y = svg_h+svg_vert_margin - svg_h*((ele_list[i]-min_ele) / dh); // Scale y to fit within the SVG height
+                poly_str += `${x},${y} `;
+            }
+            poly_str += `${svg_w+svg_horz_margin},${svg_h+svg_vert_margin} `;
+
+            // console.log("Elevation list for profile:", ele_list);
+            // Make elevation profile
+            const ele_profile =  document.getElementById("ele_profile")
+            let polygon = ele_profile.getElementById("elevation-profile-poly");
+            polygon.setAttribute("points", poly_str);
+            // Set min/max elevation text
+            let min_ele_txt = ele_profile.querySelector("#min_ele_txt");
+            min_ele_txt.textContent = min_ele.toFixed(0);
+            min_ele_txt.setAttribute("y", svg_h+svg_vert_margin);
+            let max_ele_txt = ele_profile.querySelector("#max_ele_txt");
+            max_ele_txt.textContent = max_ele.toFixed(0);
+            max_ele_txt.setAttribute("y", svg_vert_margin);
+            let max_dist_txt = ele_profile.querySelector("#max_dist_txt");
+            max_dist_txt.textContent = `${profile_distance.toFixed(1)} km`
+            
+            // Buffer profile 
+            // TODO: calculate buffer based on zoom: calculate how many km is profile width in px
+            let buffer_profile = (profile_w_px/2)*get_scale(map.getZoom(), start_pt[1]);
+            // buffer_profile = 0.5
+            const line_buffer = turf.buffer(geojson_profile, buffer_profile, { units: 'kilometers' });
+
+            // Get drill core points within buffer profile
+            const dc_intersect = turf.pointsWithinPolygon(dc_geojson, line_buffer);
+            let dc_group = ele_profile.getElementById("dc-profile-groups")
+            dc_group.innerHTML = ""
+            for (let ii = 0; ii < dc_intersect["features"].length; ii++) {
+                const obj =  dc_intersect["features"][ii];
+                const obj_id = obj["properties"]["oid"];
+                const obj_coords = obj["geometry"]["coordinates"];
+                const obj_data =  dc_layer_dict[obj_id];
+
+                var top_h = obj_data["dc_h"] //upper limit
+                const obj_dist = turf.distance(start_pt, obj_coords, {units: "kilometers"});
+                const dist_ratio = Math.min(Math.max(obj_dist/profile_distance,0),1)
+                let min_x = svg_horz_margin + svg_w*dist_ratio - dc_w/2;
+                if (obj_data!=undefined){
+                    const obj_units = obj_data["units"]
+                    for (let jj = obj_units.length-1; jj >=0; jj--) {
+                        const unit = obj_units[jj];
+                        const lower_h = unit[0];
+                        const unit_info = formations_dict[unit[1]]
+                        const unit_long_name = unit_info[1]
+                        const unit_c = unit_info[2];
+                        const min_y = svg_h + svg_vert_margin - svg_h*((top_h-min_ele) / dh); // Scale y to fit within the SVG height
+                        const max_y = svg_h + svg_vert_margin - svg_h*((lower_h-min_ele) / dh);
+                        dc_group.innerHTML += `<rect x="${min_x}" y="${min_y}" width="${dc_w}" fill="${unit_c}" height="${max_y-min_y}"> 
+                                                <title>${unit_long_name}</title> </rect>`
+                        // console.log(`${ii}:${obj_id}[${jj}] Lower h:${lower_h}, top h:${top_h} min_y: ${min_y} max_y:${max_y}`)
+                        top_h = lower_h
+                        if (top_h<min_ele){
+                            break
+                        }
+                    };
+                } 
+            }
+
+            // TODO: if overlapping drill cores in profile, get deepest> get first
+            // TODO: export profile? make report (units, legend)
+            // TODO: make rectangle profile
+        }
+
+        function toggle_edit_profile(e) {
+            if (document.profile_tool_active) {
+                e.srcElement.value = "Create Profile"
+                document.profile_tool_active = false;
+                map.getCanvas().style.cursor = '';
+                console.log("Profile tool stopped");
+                const profile_container = document.getElementById("profile_container")
+                profile_container.style.display = "none";
+                clickedCoords = []; // Reset if already have two points
+
+
+            } else {
+                document.profile_tool_active = true;
+                map.getCanvas().style.cursor = 'crosshair';
+                e.srcElement.value = "Stop Profile"
+                const profile_container = document.getElementById("profile_container")
+                profile_container.style.display = "block";
+                console.log("Profile tool started");
+            }
+        }
+
+        map.on('click', (e) => {
+            if (document.profile_tool_active == true){
+                // Extract [lng, lat] from the click event
+                const lngLat = [e.lngLat.lng, e.lngLat.lat];
+                if (clickedCoords.length == 2) {
+                    clickedCoords = []; // Reset if already have two points
+                }
+                clickedCoords.push(lngLat);
+
+                // console.log(`Click ${clickedCoords.length}:`, lngLat);
+                if (clickedCoords.length == 1) {
+                    geojson_profile.features[1].geometry.coordinates = lngLat; // Update start point
+                    map.getSource('profile_lyr_src').setData(geojson_profile);
+                }
+                // Two points clicked: update the line
+                else if (clickedCoords.length == 2) {
+                    geojson_profile.features[2].geometry.coordinates = lngLat; // Update end point
+                    geojson_profile.features[0].geometry.coordinates = clickedCoords;
+                    map.getSource('profile_lyr_src').setData(geojson_profile);
+                    profile_distance = turf.distance(clickedCoords[0],clickedCoords[1],{units:"kilometers"});
+                    show_elevation_profile(clickedCoords)                       
+                }
+                else{
+                    clickedCoords = []; // Reset for the next line
+                }
+                }}
+            );
+        // document.getElementById('btn_toggle_profile').addEventListener('click', toggle_edit_profile);
+        // zoom to current location
+        // const cur_loc  = get_location() ?? {"lon":12,"lat": 50}
+        // console.log("Current location:", cur_loc);
+        // map.setZoom(9);
+        // map.setCenter(cur_loc);
+
+        // map.on('mousemove', (e) => {
+            // document.getElementById('info').innerHTML =
+            //     // e.point is the x, y coordinates of the mousemove event relative
+            //     // to the top-left corner of the map
+            //     `${JSON.stringify(e.point)
+            //     }<br />${
+            //         // e.lngLat is the longitude, latitude geographical position of the event
+            //         JSON.stringify(e.lngLat.wrap())}`;
+            // });
+
+    </script>
+  </body>
+</html>
