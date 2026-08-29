@@ -167,3 +167,38 @@ async function get_elevation_list_multi(coord_list) {
     // Filter out any failed requests (null values) if desired
     return results.filter(item => item !== null);
 }
+
+async function get_feature_info(lng,lat,lyr_def){
+// Get WMS feature info
+    try {
+        const lyr_id = lyr_def["id"];
+        const fields= lyr_def["fields"];
+        const info_url = lyr_def["url"].replace("{bbox}",`${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`);
+        // console.log(`Requesting info from ${lyr_id}\n ${info_url}`)
+        // console.log(url)
+        const response = await fetch(info_url);
+
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        const result = await response.json();
+        try {
+            const feature_data = result["features"][0]["properties"]    //[fields]
+            let out_html= "<table>"
+            for (let index = 0; index < fields.length; index++) {
+                const k = fields[index];
+                const v = feature_data[k] ?? ""
+                out_html += `<tr><td><strong>${k}</strong></td> <td>${v}</td></tr>`
+            }
+            out_html+= "</table>"
+            return out_html
+        } catch (error) {
+            return ""
+        }
+        
+    } catch (error) {
+        console.error(error.message);
+        return ""
+    }
+
+}

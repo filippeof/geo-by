@@ -122,19 +122,26 @@ Dependencies:
             container: 'map', // ID of the HTML element
             style: map_style,
             zoom: 9,
-            center: get_location() ?? [12,50],
+            center: [12,50],
         });
-        // Add default navigation controls (zoom/rotation buttons), scale and custom controls
+        // Add default navigation controls (zoom/rotation buttons), scale 
         map.addControl(new maplibregl.NavigationControl(), 'top-right');
-        map.addControl(new maplibregl.ScaleControl({
-            maxWidth: 100, 
-            unit: 'metric'}), 
-        'bottom-left'); 
-        const layerControl = new LayerControl(layerList);
-        map.addControl(layerControl, 'top-right');
-        const profileControl = new ProfileControl();
-        map.addControl(profileControl, 'top-right');
+        map.addControl(new maplibregl.GeolocateControl({ }), 'bottom-right');
+        map.addControl(new maplibregl.ScaleControl({maxWidth: 100, unit: 'metric'}), 'bottom-left'); 
+        //and custom controls
+        map.addControl(new LayerControl(layerList), 'top-right');
+        map.addControl(new ProfileControl(), 'top-right');
+        // Create popup
+        const dc_popup = new maplibregl.Popup({
+            closeButton: false,
+            closeOnClick: false
+        });
+        const get_info_popup = new maplibregl.Popup({
+            closeButton: true,
+            closeOnClick: true
+        });
 
+        // Map interaction
         // Hover on  profile line
         map.on('load', async () => {
             map.on('mousemove', 'profile-layer', (e) => {
@@ -163,14 +170,10 @@ Dependencies:
                 svg_line.setAttribute("x2", svg_horz_margin);
             });
 
-            // on click WMS layers with info: GetFeatureInfo, application/geo+json
+            
         });
 
-
-        const dc_popup = new maplibregl.Popup({
-            closeButton: false,
-            closeOnClick: false
-        });
+        
 
         //POPUP DRILL CORES
         map.on('mousemove', 'dc-layer', (e) => {
@@ -308,7 +311,7 @@ Dependencies:
 
             // TODO: if overlapping drill cores in profile, get deepest> get first
             // TODO: export profile? make report (units, legend)
-            // TODO: make rectangle profile
+            // TODO: make rectangle profile: interpolate units( simplify by serie?)
         }
 
         function toggle_edit_profile(e) {
@@ -332,7 +335,7 @@ Dependencies:
             }
         }
 
-        map.on('click', (e) => {
+        map.on('click', async (e) => {
             if (document.profile_tool_active == true){
                 // Extract [lng, lat] from the click event
                 const lngLat = [e.lngLat.lng, e.lngLat.lat];
@@ -357,14 +360,29 @@ Dependencies:
                 else{
                     clickedCoords = []; // Reset for the next line
                 }
-                }}
-            );
-        // document.getElementById('btn_toggle_profile').addEventListener('click', toggle_edit_profile);
-        // zoom to current location
-        // const cur_loc  = get_location() ?? {"lon":12,"lat": 50}
-        // console.log("Current location:", cur_loc);
-        // map.setZoom(9);
-        // map.setCenter(cur_loc);
+                }
+            else{
+                // on click WMS layers with info: GetFeatureInfo
+                let popup_html =""
+                for (let index = 0; index < feature_info_layers.length; index++) {
+                    const lyr_def = feature_info_layers[index];
+                    const lyr_id = lyr_def["id"];
+                    // console.log(lyr_id)
+                    if (map.getLayoutProperty(lyr_id, 'visibility') != 'none'){ //visible
+                        const lng = e.lngLat.lng;
+                        const lat = e.lngLat.lat;
+                        // Fetch info
+                        const feature_info_tbl = await get_feature_info(lng, lat, lyr_def);
+                        // console.log(feature_info_tbl)
+                        popup_html += `${feature_info_tbl}`;
+                    }
+                }
+                if (popup_html!="") {
+                    get_info_popup.setLngLat(e.lngLat).setHTML(popup_html).addTo(map);
+                }
+            }
+        });
+
 
         // map.on('mousemove', (e) => {
             // document.getElementById('info').innerHTML =

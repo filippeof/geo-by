@@ -85,7 +85,7 @@ class LayerControl {
         // e.preventDefault();
         let lyr_current_state = this.layer_state[layer.id];
         lyr_current_state = (lyr_current_state + 1) % 3;
-        console.log(lyr_current_state)
+        // console.log(lyr_current_state)
         this.layer_state[layer.id] = lyr_current_state;
         if (lyr_current_state === 0) {
           e.target.checked = false;
@@ -108,7 +108,7 @@ class LayerControl {
           try {
             this._map.setPaintProperty(layer.id, 'fill-opacity', lyr_opacity);
           } catch (err2) {
-            console.log(err,err2)
+            // console.log(err,err2)
           }
         }
       });

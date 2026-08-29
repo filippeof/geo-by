@@ -129,10 +129,9 @@ const map_style = {
             };
 
 // #TODO Feature info
-// https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?service=WMS&request=GetCapabilities&f=html
-const feature_info_layers ={
-    "by_geo":{
-        "url": "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?service=WMS&request=GetFeatureInfo&layers=geoleinheit_dgk25&query_layers=geoleinheit_dgk25&styles=&bbox={bbox}srs=EPSG:4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=text/plain", 
-        "fields": []
+const feature_info_layers = [
+    {"id":"by_geo",
+    "url": "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?service=WMS&request=GetFeatureInfo&version=1.1.1&layers=geoleinheit_dgk25&query_layers=geoleinheit_dgk25&styles=&bbox={bbox}&&srs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=application/geojson", 
+    "fields": ["Kurzname der Geologischen Einheit","Geologische Einheit","Gesteinsbeschreibung", "System (ggf. Ärathem)","URI Thesaurus"]
     }
-}
+]
