@@ -1,3 +1,8 @@
 .vscode
+.git
 utils
 test*
+*.py
+.git*
+py_server
+.gitignore
