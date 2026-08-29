@@ -32,91 +32,123 @@ function make_coord_list(start_pt, end_pt, n_points){
     return coord_list
 }
 
-async function get_elevation_list(coord_list){
-    // Get altitude from list of coordinates
-        // Die Liste muss als JSON übermittelt werden.
-        // Das Feld 'srid' gibt das Koordinatensystem der Eingangskoordinaten an und darf folgende Werte haben: 25832, 25833, 31468, 3857, 4326.
-        // Die einzelnen Koordinaten dürfen bereits eine Höhe haben, diese wird jedoch ignoriert und schlussendlich überschrieben.
-        // Die Liste darf maximal 4000 Punkte beinhalten.
-        // Die Ausgabe erfolgt als JSON im selben Format wie die Eingabe, die Reihenfolge der Punkte bleibt unverändert.
-        // Die Ausgabekoordinaten sind in dem Eingangskoordinatensystem.
-        // Die Höhen sind immer im Höhenbezugssystem DHHN2016.
-        // Die zurückgegebenen Koordinaten und Höhen sind gemäß gängigen Standards gerundet.
-        // Alle Koordinaten, für die keine Höhe ermittelt werden konnte (z.B. weil außerhalb Bayerns), haben in der Rückgabe eine Höhe von 'null'.
-    try {
-        const response = await fetch(od_by_h_list_url, 
-            {  
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    // 'accept': 'application/json',
-                },
-                body: JSON.stringify({"srid": 4326,
-                    "coords": coord_list
-                }),
-            });
-        if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-        }
+// async function get_elevation_list(coord_list){
+//     // Get altitude from list of coordinates
+//         // Die Liste muss als JSON übermittelt werden.
+//         // Das Feld 'srid' gibt das Koordinatensystem der Eingangskoordinaten an und darf folgende Werte haben: 25832, 25833, 31468, 3857, 4326.
+//         // Die einzelnen Koordinaten dürfen bereits eine Höhe haben, diese wird jedoch ignoriert und schlussendlich überschrieben.
+//         // Die Liste darf maximal 4000 Punkte beinhalten.
+//         // Die Ausgabe erfolgt als JSON im selben Format wie die Eingabe, die Reihenfolge der Punkte bleibt unverändert.
+//         // Die Ausgabekoordinaten sind in dem Eingangskoordinatensystem.
+//         // Die Höhen sind immer im Höhenbezugssystem DHHN2016.
+//         // Die zurückgegebenen Koordinaten und Höhen sind gemäß gängigen Standards gerundet.
+//         // Alle Koordinaten, für die keine Höhe ermittelt werden konnte (z.B. weil außerhalb Bayerns), haben in der Rückgabe eine Höhe von 'null'.
+//     try {
+//         const response = await fetch(od_by_h_list_url, 
+//             {  
+//                 method: "POST",
+//                 headers: {
+//                     "Content-Type": "application/json",
+//                     // 'accept': 'application/json',
+//                 },
+//                 body: JSON.stringify({"srid": 4326,
+//                     "coords": coord_list
+//                 }),
+//             });
+//         if (!response.ok) {
+//         throw new Error(`Response status: ${response.status}`);
+//         }
 
-        const result = await response.json();
-        return result["coords"];
-    } catch (error) {
-        console.error(error.message);
-    }
-    }
+//         const result = await response.json();
+//         return result["coords"];
+//     } catch (error) {
+//         console.error(error.message);
+//     }
+//     }
 
-function get_location(){
-    if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            return ([lon,lat])
-            // console.log(`Rough Latitude: ${lat}, Longitude: ${lon}`);
-        },
-        (error) => {
-            console.warn(`Error (${error.code}): ${error.message}`);
-        },
-        {
-            enableHighAccuracy: false,
-            timeout: 3000,
-            maximumAge: 600000
-        }
-    );
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    }
+// function get_location(){
+//     if (navigator.geolocation) {
+//     navigator.geolocation.getCurrentPosition(
+//         (position) => {
+//             const lat = position.coords.latitude;
+//             const lon = position.coords.longitude;
+//             return ([lon,lat])
+//             // console.log(`Rough Latitude: ${lat}, Longitude: ${lon}`);
+//         },
+//         (error) => {
+//             console.warn(`Error (${error.code}): ${error.message}`);
+//         },
+//         {
+//             enableHighAccuracy: false,
+//             timeout: 3000,
+//             maximumAge: 600000
+//         }
+//     );
+//     } else {
+//         console.log("Geolocation is not supported by this browser.");
+//     }
+//     }
 
 
-async function get_elevation_list_multi(coord_list) {
-    // Multiple get requests instead of single post
-    const promises = coord_list.map(async (coord) => {
-        const lng = String(coord[0]);
-        const lat = String(coord[1]);
-        const url = od_by_h_url.replace("{srid}", "4326").replace("{x}", lng).replace("{y}", lat);
+// async function get_elevation_list_multi(coord_list) {
+//     // Multiple get requests instead of single post
+//     const promises = coord_list.map(async (coord) => {
+//         const lng = String(coord[0]);
+//         const lat = String(coord[1]);
+//         const url = od_by_h_url.replace("{srid}", "4326").replace("{x}", lng).replace("{y}", lat);
         
         
-        try {
-            const response = await fetch(url);
-            if (!response.ok) return null;
+//         try {
+//             const response = await fetch(url);
+//             if (!response.ok) return null;
             
-            const result = await response.json();
-            return result["coords"][0]; // Keep structure intact
-        } catch (error) {
-            console.error(`Failed fetching coordinate ${lng}, ${lat}:`, error.message);
-            return null; // Return null to keep array alignment accurate
+//             const result = await response.json();
+//             return result["coords"][0]; // Keep structure intact
+//         } catch (error) {
+//             console.error(`Failed fetching coordinate ${lng}, ${lat}:`, error.message);
+//             return null; // Return null to keep array alignment accurate
+//         }
+//     });
+
+//     // Wait for all network requests to finish together
+//     const results = await Promise.all(promises);
+    
+//     // Filter out any failed requests (null values) if desired
+//     return results.filter(item => item !== null);
+// }
+async function get_elevation_list(coord_list) {
+    const promises = coord_list.map(async (coord) => {
+        const lng = coord[0];
+        const lat = coord[1];
+        
+        // Remember to use your absolute server URL wrapper here so the path resolves!
+        const cogUrl = `${window.location.origin}/src/data/srtm_by_cog.tif`;
+
+        try {
+            // Use await directly to catch the value seamlessly
+            const px_val = await MaplibreCOGProtocol.locationValues(
+                cogUrl,
+                { "longitude": lng, "latitude": lat },
+                20
+            );
+            
+            // Return the first band array value out of the map iteration loop
+            return px_val ? px_val[0] : null; 
+            
+        } catch (err) {
+            console.error(`Error fetching coordinates [${lng}, ${lat}]:`, err);
+            return null; // Return null so the index array isn't broken
         }
     });
 
-    // Wait for all network requests to finish together
+    // Wait for all processing threads to finish concurrently
     const results = await Promise.all(promises);
+    console.log("Extracted Elevation Data Matrix:", results);
     
     // Filter out any failed requests (null values) if desired
     return results.filter(item => item !== null);
 }
- 
+    
 
 async function get_feature_info(lng,lat,lyr_def){
 // Get WMS feature info

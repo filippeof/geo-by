@@ -48,7 +48,7 @@ class LayerControl {
 
     // Build the checkbox list
     this.layer_state = {}; //id: 0(checked=false),1(checked),2(checked, indeterminate)
-    this.layers.forEach(layer => {
+    this.layers.reverse().forEach(layer => {
       const item = document.createElement('div');
       item.style.marginBottom = '4px';
       item.style.display = 'flex';

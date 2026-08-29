@@ -11,13 +11,18 @@ Dependencies:
     <title>GEO Profile BY</title>
     <meta name="author" content="Filippe F.">
 
-    <link rel="icon" type="image/svg+xml" href="src/img/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="src/img/by_profi.ico">
 
     <!-- Maplibre -->
-    <link rel='stylesheet' href='src/js/maplibre_6-5/dist/maplibre-gl.css' />
-    <!-- <script src='src/js/maplibre_6-5/dist/maplibre-gl-dev.mjs'></script> -->
+    <!-- <link rel='stylesheet' href='src/js/maplibre_6-5/dist/maplibre-gl.css' /> -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^6.6.0/dist/maplibre-gl.css" />
+
     <!-- Turf -->
-    <script src="src/js/turf.min.js" charset="utf-8"></script>
+    <!-- <script src="src/js/turf.min.js" charset="utf-8"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.0/turf.min.js"></script>
+    <!-- maplibre-cog-protocol -->
+    <script src="https://unpkg.com/@geomatico/maplibre-cog-protocol@0.5.0/dist/index.js"></script>
+
      <!-- style -->
     <link rel='stylesheet' href='src/css/style.css'>
     <!-- Map definitions, layers style -->
@@ -64,7 +69,10 @@ Dependencies:
     </div>
 
     <script type="module">
-        import * as maplibregl from './src/js/maplibre_6-5/dist/maplibre-gl.mjs';
+        // import * as maplibregl from './src/js/maplibre_6-5/dist/maplibre-gl.mjs';
+        import * as maplibregl from 'https://unpkg.com/maplibre-gl@^6.6.0/dist/maplibre-gl.mjs';
+
+        maplibregl.addProtocol('cog', MaplibreCOGProtocol.cogProtocol);
 
         // Elevation Profile
         const v_ex = 2.5 // Vertical exageration #TODO scale svgw,h 
@@ -230,15 +238,11 @@ Dependencies:
             const coord_list = make_coord_list(start_pt,end_pt,n_coords);
             // console.log("Coordinate list ", coord_list);
             // Call the function to create the profile
-            var coord_ele_list =[];
-            try {
-                coord_ele_list = await get_elevation_list(coord_list);
-            } catch (error) {
-                coord_ele_list = await get_elevation_list_multi(coord_list);
-            }
+            const ele_list = await get_elevation_list(coord_list);   
+            console.log(ele_list)         
             // const coord_ele_list = await get_elevation_list(coord_list);
             // console.log(coord_ele_list);
-            const ele_list = coord_ele_list.map(ele => ele[2]); // Extract the elevation values
+            // const ele_list = coord_ele_list.map(ele => ele[2]); // Extract the elevation values
             const max_ele = Math.max(...ele_list);
             const min_ele = Math.min(...ele_list) - profile_extra_depth; // Add buffer below minimum elevation
             const dh = max_ele - min_ele;

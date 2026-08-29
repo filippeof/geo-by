@@ -54,20 +54,31 @@ const map_style = {
                         opacity: 0.5,
                         attribution: '© OpenStreetMap contributors'
                     },
-                    "by_relief": {
-                        type: 'raster',
-                        tiles: [
-                            'https://geoservices.bayern.de/od/wms/dgm/v1/relief?&service=WMS&request=GetMap&layers=by_relief_schraeglicht&styles=&format=image%2Fpng&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}'
-                        ],
+                    // "by_relief": {
+                    //     type: 'raster',
+                    //     tiles: [
+                    //         'https://geoservices.bayern.de/od/wms/dgm/v1/relief?&service=WMS&request=GetMap&layers=by_relief_schraeglicht&styles=&format=image%2Fpng&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}'
+                    //     ],
+                    //     tileSize: 256
+                    // },
+                    'by_relief':{
+                        type: 'raster-dem',
+                        url: 'cog://src/data/srtm_by_cog.tif#dem',
                         tileSize: 256
-                    },
+                    }
                 },
                 layers: [
+                    // {
+                    //     id: 'by_relief',
+                    //     type: 'raster',
+                    //     source: 'by_relief',
+                    //     paint: {}
+                    // },
+   
                     {
                         id: 'by_relief',
-                        type: 'raster',
                         source: 'by_relief',
-                        paint: {}
+                        type: 'hillshade'
                     },
                     {
                         id: 'osm-layer',
