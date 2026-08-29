@@ -122,7 +122,7 @@ async function get_elevation_list(coord_list) {
         const lat = coord[1];
         
         // Remember to use your absolute server URL wrapper here so the path resolves!
-        const cogUrl = `./src/data/srtm_by_cog.tif`;
+        const cogUrl = `https://filippeof.github.io/geo-by/src/data/srtm_by_cog.tif`;
 
         try {
             // Use await directly to catch the value seamlessly
