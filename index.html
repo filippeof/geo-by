@@ -80,7 +80,7 @@ Dependencies:
         const svg_vert_margin = 25;
         const svg_w = 950;  // svg width, heigth
         const svg_h = 210;
-        const min_profile_extra_depth = 100; // Minimum extra depth under minimum elevation (m)
+        const min_profile_depth = 100; // Minimum extra depth under minimum elevation (m)
         const n_elevation_pts = 200; // Number of coordinates to sample elevation along profile line
 
         const profile_w_px = 20;    //Profile line stroke width in px
@@ -135,20 +135,25 @@ Dependencies:
             ]
         };
         //add geojson sources to map style
-        map_style.sources["dc_lyr_src"]["data"] = dc_geojson
-        map_style.sources["profile_lyr_src"]["data"] = geojson_profile
+        map_style.sources["dc_lyr_src"]["data"] = dc_geojson;
+        map_style.sources["profile_lyr_src"]["data"] = geojson_profile;
         
         // Initialize the map
         const map = new maplibregl.Map({
             container: 'map', // ID of the HTML element
+            pitch: 55,
+            maxZoom: 16,
+            maxPitch: 75,
             style: map_style,
-            zoom: 9,
-            center: [12,50],
+            zoom: 8,
+            center: [11.4,48.5],
         });
         // Add default navigation controls (zoom/rotation buttons), scale 
-        map.addControl(new maplibregl.NavigationControl(), 'top-right');
-        map.addControl(new maplibregl.GeolocateControl({ }), 'bottom-right');
+        map.addControl(new maplibregl.NavigationControl({visualizePitch: true, showZoom: true, showCompass: true}), 'top-right');
         map.addControl(new maplibregl.ScaleControl({maxWidth: 100, unit: 'metric'}), 'bottom-left'); 
+        map.addControl(new maplibregl.TerrainControl({ source: 'by_relief', exaggeration: v_ex }));
+        map.addControl(new maplibregl.GeolocateControl({ }), 'bottom-right');
+    
         //and custom controls
         map.addControl(new LayerControl(layerList), 'top-right');
         map.addControl(new ProfileControl(), 'top-right');
@@ -252,8 +257,8 @@ Dependencies:
             // const ele_list = coord_ele_list.map(ele => ele[2]); // Extract the elevation values [lon,lat,ele]
             const max_ele = Math.max(...ele_list);
             let min_ele = Math.min(...ele_list);
-            // Add buffer below min elevation (at least the same distance as 1.5*elevation diference or min_profile_extra_depth, whatever larger)
-            const profile_extra_depth = Math.max(...[1.5*(max_ele - min_ele), min_profile_extra_depth]);
+            // Add buffer below min elevation (at least the same distance as elevation diference or min_profile_depth, whatever larger)
+            const profile_extra_depth = Math.max(...[(max_ele - min_ele), min_profile_depth]);
             min_ele = min_ele - profile_extra_depth;
             const dh = max_ele - min_ele;
             // TODO calculate svg_h based on given v.ex.?

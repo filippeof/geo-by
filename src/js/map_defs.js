@@ -3,7 +3,7 @@ const layerList = [
     {id: 'osm-layer', name: "OSM", visible: true},
     {id: 'by_webkarte', name: "BY Webkarte", visible: true},
     {id: 'by_geo', name: "DGK25", visible: true},
-    {id: 'by_geo_raster', name: "DGK25- Raster", visible: true},
+    // {id: 'by_geo_raster', name: "DGK25- Raster", visible: true},
     // {id: 'profile-layer', name: "Profile", visible: true},
     // {id: 'pt-layer', name: "Point", visible: true},
     {id: 'dc-layer', name: "Drill cores", visible: true} 
@@ -12,16 +12,16 @@ const profile_w_px = 20; // defined in document as well
 const map_style = {
                 version: 8,
                 sources: {
+                    'profile_lyr_src':{
+                        type: 'geojson',
+                        data: {}//geojson_profile
+                    },
                     'dc_lyr_src':{
                         type: 'geojson',
                         data: {},//dc_geojson
                         attribution: 'Bayerisches Landesamt für Umwelt'
 
-                    },
-                    'profile_lyr_src':{
-                        type: 'geojson',
-                        data: {}//geojson_profile
-                    },
+                    },    
                     "by_geo":{
                         type: 'raster',
                         tiles: [
@@ -32,15 +32,15 @@ const map_style = {
                         attribution: 'Bayerisches Landesamt für Umwelt'
 
                     },
-                    "by_geo_raster":{
-                        type: 'raster',
-                        tiles: [
-                        "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?&service=WMS&request=GetMap&layers=dgk25_raster&styles=&format=image%2Fpng32&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}"
-                        ],
-                        tileSize: 256,
-                        attribution: 'Bayerisches Landesamt für Umwelt'
-
-                    },
+                    // "by_geo_raster":{
+                    //     type: 'raster',
+                    //     tiles: [
+                    //     "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?&service=WMS&request=GetMap&layers=dgk25_raster&styles=&format=image%2Fpng32&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+                    //     ],
+                    //     tileSize: 256,
+                    //     maxzoom: 12,
+                    //     attribution: 'Bayerisches Landesamt für Umwelt'
+                    // },
                     "by_webkarte": {
                         type: 'raster',
                         tiles: [
@@ -76,11 +76,15 @@ const map_style = {
                     //     ],
                     //     tileSize: 256
                     // },
+
                     'by_relief':{
                         type: 'raster-dem',
-                        url: 'cog://src/data/srtm_by_cog.tif#dem',
+                        url: 'cog://https://filippeof.github.io/geo-by/src/data/srtm_by_cog.tif#dem',
+                        //     url: 'cog://src/data/srtm_by_cog.tif#dem',
                         tileSize: 256
                     }
+                    
+                    
                 },
                 layers: [
                     // {
@@ -100,7 +104,7 @@ const map_style = {
                         type: 'raster',
                         source: 'osm-raster-tiles',
                         minzoom: 0,
-                        maxzoom: 16,
+                        maxzoom: 12,
                         paint: {
                             'raster-opacity': 0.75 // 75% Opacity
                         }
@@ -110,7 +114,7 @@ const map_style = {
                         id: 'by_webkarte',
                         type: 'raster',
                         source: 'by_webkarte',
-                        minzoom: 8,
+                        minzoom: 12,
                         maxzoom: 20,
                         paint: {
                             'raster-opacity': 0.75 // 75% Opacity
@@ -123,18 +127,30 @@ const map_style = {
                         paint: {
                             'raster-opacity': 0.75 // 50% Opacity
                         },
-                        minzoom: 14,
+                        minzoom: 12,
                         maxzoom: 20,
                     },
-                                        {
-                        id: 'by_geo_raster',
-                        type: 'raster',
-                        source: 'by_geo_raster',
+                    // {
+                    //     id: 'by_geo_raster',
+                    //     type: 'raster',
+                    //     source: 'by_geo_raster',
+                    //     paint: {
+                    //         'raster-opacity': 0.75 // 50% Opacity
+                    //     },
+                    //     minzoom: 8,
+                    //     maxzoom: 12,
+                    // },
+                    
+                    {
+                        id: 'dc-layer',
+                        type: 'circle',
+                        source: 'dc_lyr_src',
                         paint: {
-                            'raster-opacity': 0.75 // 50% Opacity
+                            'circle-radius': 6,
+                            'circle-color': "#FF000060",     //60% opacity
+                            'circle-stroke-color': '#ffffff80', //80% opacity
+                            'circle-stroke-width': 1          
                         },
-                        minzoom: 6,
-                        maxzoom: 14,
                     },
                     {
                         id: 'profile-layer',
@@ -160,19 +176,13 @@ const map_style = {
                             'circle-color': '#00ff00' 
                         },
                         filter: ['==', '$type', 'Point']
-                    },
-                    {
-                        id: 'dc-layer',
-                        type: 'circle',
-                        source: 'dc_lyr_src',
-                        paint: {
-                            'circle-radius': 6,
-                            'circle-color': "#FF000060",     //60% opacity
-                            'circle-stroke-color': '#ffffff80', //80% opacity
-                            'circle-stroke-width': 1          
-                        },
                     }
-                ]
+                ],
+                terrain: {
+                    source: 'by_relief',
+                    exaggeration: 2
+                },
+                sky: {}
             };
 
 // Get feture info layers
