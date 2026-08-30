@@ -110,13 +110,13 @@ async function get_feature_info(lng,lat,lyr_def){
         const fields= lyr_def["fields"];
         const info_url = lyr_def["url"].replace("{bbox}",`${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`);
         // console.log(`Requesting info from ${lyr_id}\n ${info_url}`)
-        // console.log(url)
         const response = await fetch(info_url);
 
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
         const result = await response.json(); //TODO: considering geojson. Implement text/plain or xml as fallback?
+
         try {
             const feature_props = result["features"][0]["properties"]
             // Make table field:val fo
@@ -124,14 +124,15 @@ async function get_feature_info(lng,lat,lyr_def){
             for (let index = 0; index < fields.length; index++) {
                 const k = fields[index];
                 let v = feature_props[k] ?? ""
-                if (v.Startswith("http")){
-                    v = `<a href="${v}"></a>`
+                if (v.startsWith("http")){
+                    v = `<a href="${v}">${v}</a>`
                 }
                 out_html += `<tr><td><strong>${k}</strong></td> <td>${v}</td></tr>`
             }
             out_html+= "</table>"
             return out_html
         } catch (error) {
+            console.error(error.message);
             return ""
         }
         

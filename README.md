@@ -1,4 +1,4 @@
-Geology map and Drill core profiles for Bayern-DE
+GEO3-BY: 3D Geological map and Drill core profiles for Bayern-DE
 
 https://filippeof.github.io/geo-by/
 

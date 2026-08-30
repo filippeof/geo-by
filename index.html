@@ -164,7 +164,8 @@ Dependencies:
         });
         const get_info_popup = new maplibregl.Popup({
             closeButton: true,
-            closeOnClick: true
+            closeOnClick: true,
+            maxWidth:"none"
         });
 
         // Map interaction
@@ -326,8 +327,11 @@ Dependencies:
                         const unit_c = unit_info[2];
                         const min_y = svg_h + svg_vert_margin - svg_h*((top_h-min_ele) / dh); // Scale y to fit within the SVG height
                         const max_y = svg_h + svg_vert_margin - svg_h*((lower_h-min_ele) / dh);
-                        dc_group_txt += `<rect x="${min_x.toFixed(0)}" y="${min_y.toFixed(0)}" width="${dc_w}" fill="${unit_c}" height="${(max_y-min_y).toFixed(0)}"> 
-                                                <title>${unit_long_name}</title> </rect>`
+                        const rect_h = (max_y-min_y).toFixed(0)
+                        if (rect_h>0){
+                            dc_group_txt += `<rect x="${min_x.toFixed(0)}" y="${min_y.toFixed(0)}" width="${dc_w}" fill="${unit_c}" height="${rect_h}"> 
+                                                    <title>${unit_long_name}</title> </rect>`
+                            }
                         // console.log(`${ii}:${obj_id}[${jj}] Lower h:${lower_h}, top h:${top_h} min_y: ${min_y} max_y:${max_y}`)
                         top_h = lower_h;
                         // if further units are below elevation profile  min depth, stop 
@@ -414,13 +418,11 @@ Dependencies:
                 for (let index = 0; index < feature_info_layers.length; index++) {
                     const lyr_def = feature_info_layers[index];
                     const lyr_id = lyr_def["id"];
-                    // console.log(lyr_id)
                     if (map.getLayoutProperty(lyr_id, 'visibility') != 'none'){ //visible
                         const lng = e.lngLat.lng;
                         const lat = e.lngLat.lat;
                         // Fetch info
                         const feature_info_tbl = await get_feature_info(lng, lat, lyr_def);
-                        // console.log(feature_info_tbl)
                         popup_html += `${feature_info_tbl}`;
                     }
                 }
