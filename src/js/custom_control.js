@@ -13,7 +13,9 @@ class LayerControl {
     this._container.style.fontSize = '12px';
     this._container.style.fontFamily = 'sans-serif';
     this._container.style.backgroundColor = '#fff';
-    
+    this._container.title = "Choose Layers"
+
+    // background img
     const layers_icon_img = document.createElement('img')
     layers_icon_img.setAttribute("src","./src/img/layers.png")
     layers_icon_img.style.display = 'block';
@@ -140,30 +142,31 @@ class ProfileControl {
     
     // Create main container with MapLibre control classes
     this._container = document.createElement('div');
-    this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group layer-ctrl-container';
+    this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group profile-ctrl-container';
     this._container.style.padding = '8px';
+    this._container.title = "Toggle Elevation Profile"
     this.profile_active = false
     const profile_icon_img = document.createElement('img')
-    profile_icon_img.setAttribute("src","./src/img/profile_activate.png")
+    profile_icon_img.setAttribute("src","./src/img/profile_activate.png") // TODO: set style active and inactive with bg image for profile-ctrl-container instead
     profile_icon_img.style.display = 'block';
     const listContainer = document.createElement('div');
     listContainer.style.display = 'none';
 
     this._container.addEventListener('click', () => {
-      console.log(document.profile_tool_active)
+      // console.log(document.profile_tool_active)
       if (document.profile_tool_active){
         document.profile_tool_active = false;
         this._map.getCanvas().style.cursor = '';
-        profile_icon_img.setAttribute("src","./src/img/profile_activate.png")
-        const profile_container = document.getElementById("profile_container")
-        profile_container.style.display = "none";
+        profile_icon_img.setAttribute("src","./src/img/profile_activate.png") 
+        const ele_profile_container = document.getElementById("ele_profile_container")
+        ele_profile_container.style.display = "none";
       }
       else{
         document.profile_tool_active = true;
         this._map.getCanvas().style.cursor = 'crosshair';
         profile_icon_img.setAttribute("src","./src/img/profile_deactivate.png")
-        const profile_container = document.getElementById("profile_container")
-        profile_container.style.display = "block";
+        const ele_profile_container = document.getElementById("ele_profile_container")
+        ele_profile_container.style.display = "block";
 
       }
     });

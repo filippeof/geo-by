@@ -33,6 +33,7 @@ function make_coord_list(start_pt, end_pt, n_points){
 }
 
 // async function get_elevation_list(coord_list){
+    //TODO cors issue: sampling from COG tiff instead
 //     // Get altitude from list of coordinates
 //         // Die Liste muss als JSON übermittelt werden.
 //         // Das Feld 'srid' gibt das Koordinatensystem der Eingangskoordinaten an und darf folgende Werte haben: 25832, 25833, 31468, 3857, 4326.
@@ -66,92 +67,44 @@ function make_coord_list(start_pt, end_pt, n_points){
 //     }
 //     }
 
-// function get_location(){
-//     if (navigator.geolocation) {
-//     navigator.geolocation.getCurrentPosition(
-//         (position) => {
-//             const lat = position.coords.latitude;
-//             const lon = position.coords.longitude;
-//             return ([lon,lat])
-//             // console.log(`Rough Latitude: ${lat}, Longitude: ${lon}`);
-//         },
-//         (error) => {
-//             console.warn(`Error (${error.code}): ${error.message}`);
-//         },
-//         {
-//             enableHighAccuracy: false,
-//             timeout: 3000,
-//             maximumAge: 600000
-//         }
-//     );
-//     } else {
-//         console.log("Geolocation is not supported by this browser.");
-//     }
-//     }
-
-
-// async function get_elevation_list_multi(coord_list) {
-//     // Multiple get requests instead of single post
-//     const promises = coord_list.map(async (coord) => {
-//         const lng = String(coord[0]);
-//         const lat = String(coord[1]);
-//         const url = od_by_h_url.replace("{srid}", "4326").replace("{x}", lng).replace("{y}", lat);
-        
-        
-//         try {
-//             const response = await fetch(url);
-//             if (!response.ok) return null;
-            
-//             const result = await response.json();
-//             return result["coords"][0]; // Keep structure intact
-//         } catch (error) {
-//             console.error(`Failed fetching coordinate ${lng}, ${lat}:`, error.message);
-//             return null; // Return null to keep array alignment accurate
-//         }
-//     });
-
-//     // Wait for all network requests to finish together
-//     const results = await Promise.all(promises);
-    
-//     // Filter out any failed requests (null values) if desired
-//     return results.filter(item => item !== null);
-// }
 async function get_elevation_list(coord_list) {
     const promises = coord_list.map(async (coord) => {
         const lng = coord[0];
         const lat = coord[1];
         
-        // Remember to use your absolute server URL wrapper here so the path resolves!
+        // using absolute path to github
+        // ${window.location.origin}/
         const cogUrl = `https://filippeof.github.io/geo-by/src/data/srtm_by_cog.tif`;
 
         try {
-            // Use await directly to catch the value seamlessly
+            // Get value
             const px_val = await MaplibreCOGProtocol.locationValues(
                 cogUrl,
                 { "longitude": lng, "latitude": lat },
                 20
             );
             
-            // Return the first band array value out of the map iteration loop
+            // Return val (for rgb: [r,g,b])
             return px_val ? px_val[0] : null; 
             
         } catch (err) {
-            console.error(`Error fetching coordinates [${lng}, ${lat}]:`, err);
-            return null; // Return null so the index array isn't broken
+            // console.error(`Error fetching coordinates [${lng}, ${lat}]:`, err);
+            return null; // Return null so each coordinate has an elevation point
         }
     });
 
-    // Wait for all processing threads to finish concurrently
+    // Wait to get all evevation points
     const results = await Promise.all(promises);
-    console.log("Extracted Elevation Data Matrix:", results);
-    
-    // Filter out any failed requests (null values) if desired
-    return results.filter(item => item !== null);
+    // console.log("Elevation data:", results);
+    return results
+    // Filter out null?
+    // return results.filter(item => item !== null);
 }
     
 
 async function get_feature_info(lng,lat,lyr_def){
 // Get WMS feature info
+// lyr_def =  {"id": "layer_id", "url": "wms get feature info url", "fields": [list of fields to show as table]}
     try {
         const lyr_id = lyr_def["id"];
         const fields= lyr_def["fields"];
@@ -163,13 +116,17 @@ async function get_feature_info(lng,lat,lyr_def){
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
-        const result = await response.json();
+        const result = await response.json(); //TODO: considering geojson. Implement text/plain or xml as fallback?
         try {
-            const feature_data = result["features"][0]["properties"]    //[fields]
+            const feature_props = result["features"][0]["properties"]
+            // Make table field:val fo
             let out_html= "<table>"
             for (let index = 0; index < fields.length; index++) {
                 const k = fields[index];
-                const v = feature_data[k] ?? ""
+                let v = feature_props[k] ?? ""
+                if (v.Startswith("http")){
+                    v = `<a href="${v}"></a>`
+                }
                 out_html += `<tr><td><strong>${k}</strong></td> <td>${v}</td></tr>`
             }
             out_html+= "</table>"
@@ -183,4 +140,21 @@ async function get_feature_info(lng,lat,lyr_def){
         return ""
     }
 
+}
+
+function download_profile(out_filename='ele_profile.svg'){
+    // Download elevation profile as svg
+    // Make it svg string
+    const profile_svg_str = document.getElementById("ele_profile_svg").outerHTML;
+    // Make blob
+    const svgBlob = new Blob([profile_svg_str], { type: 'image/svg+xml;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(svgBlob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = blobUrl;
+    downloadLink.download = out_filename; // The default filename
+    // Download blob 
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(blobUrl);
 }

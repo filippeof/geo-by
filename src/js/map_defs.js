@@ -2,7 +2,8 @@ const layerList = [
     {id: 'by_relief', name: "BY Relief", visible: true},
     {id: 'osm-layer', name: "OSM", visible: true},
     {id: 'by_webkarte', name: "BY Webkarte", visible: true},
-    {id: 'by_geo', name: "BY Geo", visible: true},
+    {id: 'by_geo', name: "DGK25", visible: true},
+    {id: 'by_geo_raster', name: "DGK25- Raster", visible: true},
     // {id: 'profile-layer', name: "Profile", visible: true},
     // {id: 'pt-layer', name: "Point", visible: true},
     {id: 'dc-layer', name: "Drill cores", visible: true} 
@@ -10,15 +11,16 @@ const layerList = [
 const profile_w_px = 20; // defined in document as well
 const map_style = {
                 version: 8,
-
                 sources: {
                     'dc_lyr_src':{
-                        'type': 'geojson',
-                        'data': {}//dc_geojson
+                        type: 'geojson',
+                        data: {},//dc_geojson
+                        attribution: 'Bayerisches Landesamt für Umwelt'
+
                     },
                     'profile_lyr_src':{
-                        'type': 'geojson',
-                        'data': {}//geojson_profile
+                        type: 'geojson',
+                        data: {}//geojson_profile
                     },
                     "by_geo":{
                         type: 'raster',
@@ -26,7 +28,18 @@ const map_style = {
                         //    "https://www.lfu.bayern.de/gdi/wms/geologie/gk500?service=WMS&request=GetMap&version=1.1.1&layers=haupteinheitgk500,strukturgk500&srs=EPSG:3857&format=image%2Fpng&transparent=true&styles=&width=256&height=256&bbox={bbox-epsg-3857}"
                         "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?&service=WMS&request=GetMap&layers=geoleinheit_dgk25%2Cstrukturln_dgk25&styles=&format=image%2Fpng32&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}"
                         ],
-                        tileSize: 256
+                        tileSize: 256,
+                        attribution: 'Bayerisches Landesamt für Umwelt'
+
+                    },
+                    "by_geo_raster":{
+                        type: 'raster',
+                        tiles: [
+                        "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?&service=WMS&request=GetMap&layers=dgk25_raster&styles=&format=image%2Fpng32&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+                        ],
+                        tileSize: 256,
+                        attribution: 'Bayerisches Landesamt für Umwelt'
+
                     },
                     "by_webkarte": {
                         type: 'raster',
@@ -41,7 +54,9 @@ const map_style = {
                             'https://wmtsod8.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
                             'https://wmtsod9.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}'
                         ],
-                        tileSize: 256
+                        tileSize: 256,
+                        attribution: 'Geobasisdaten: Bayerische Vermessungsverwaltung (Daten verändert)'
+
                     },
                     'osm-raster-tiles': {
                         type: 'raster',
@@ -85,21 +100,41 @@ const map_style = {
                         type: 'raster',
                         source: 'osm-raster-tiles',
                         minzoom: 0,
-                        maxzoom: 19
+                        maxzoom: 16,
+                        paint: {
+                            'raster-opacity': 0.75 // 75% Opacity
+                        }
                     },
 
                     {
                         id: 'by_webkarte',
                         type: 'raster',
                         source: 'by_webkarte',
-                        minzoom: 6,
-                        maxzoom: 18
+                        minzoom: 8,
+                        maxzoom: 20,
+                        paint: {
+                            'raster-opacity': 0.75 // 75% Opacity
+                        }
                     },
                     {
                         id: 'by_geo',
                         type: 'raster',
                         source: 'by_geo',
-                        paint: {}
+                        paint: {
+                            'raster-opacity': 0.75 // 50% Opacity
+                        },
+                        minzoom: 14,
+                        maxzoom: 20,
+                    },
+                                        {
+                        id: 'by_geo_raster',
+                        type: 'raster',
+                        source: 'by_geo_raster',
+                        paint: {
+                            'raster-opacity': 0.75 // 50% Opacity
+                        },
+                        minzoom: 6,
+                        maxzoom: 14,
                     },
                     {
                         id: 'profile-layer',
@@ -122,7 +157,7 @@ const map_style = {
                         source: 'profile_lyr_src',
                         paint: {
                             'circle-radius': 6,
-                            'circle-color': '#00ff00' // Green point
+                            'circle-color': '#00ff00' 
                         },
                         filter: ['==', '$type', 'Point']
                     },
@@ -132,17 +167,18 @@ const map_style = {
                         source: 'dc_lyr_src',
                         paint: {
                             'circle-radius': 6,
-                            'circle-color': "#FF000080" // Red point, 80% opacity
+                            'circle-color': "#FF000060",     //60% opacity
+                            'circle-stroke-color': '#ffffff80', //80% opacity
+                            'circle-stroke-width': 1          
                         },
                     }
-                    
                 ]
             };
 
-// #TODO Feature info
+// Get feture info layers
 const feature_info_layers = [
     {"id":"by_geo",
     "url": "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?service=WMS&request=GetFeatureInfo&version=1.1.1&layers=geoleinheit_dgk25&query_layers=geoleinheit_dgk25&styles=&bbox={bbox}&&srs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=application/geojson", 
-    "fields": ["Kurzname der Geologischen Einheit","Geologische Einheit","Gesteinsbeschreibung", "System (ggf. Ärathem)","URI Thesaurus"]
+    "fields": ["Kurzname der Geologischen Einheit", "Geologische Einheit","Gesteinsbeschreibung", "System (ggf. Ärathem)","URI Thesaurus"]
     }
 ]
