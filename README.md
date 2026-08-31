@@ -7,6 +7,7 @@ https://filippeof.github.io/geo-by/
 - Data sources:
   - Geological map, Drill core data 
     - Bayerisches Landesamt für Umwelt, www.lfu.bayern.de; Lizenz: CC BY 4.0
+    - Datenquelle: GÜK250 (WMS), (c) BGR, Hannover, 2019
   - Elevation data, Base maps
     - Geobasisdaten: Bayerische Vermessungsverwaltung – www.geodaten.bayern.de (Daten verändert), Lizenz: CC BY 4.0, © GeoBasis-DE / BKG 2022 (Daten verändert)
   - OSM basemap
