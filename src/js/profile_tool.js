@@ -107,38 +107,62 @@ async function get_feature_info(lng,lat,lyr_def){
 // lyr_def =  {"id": "layer_id", "url": "wms get feature info url", "fields": [list of fields to show as table]}
     try {
         const lyr_id = lyr_def["id"];
-        const fields= lyr_def["fields"];
-        const info_url = lyr_def["url"].replace("{bbox}",`${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`);
+        const fields = lyr_def["fields"];
+        const fields_alias = lyr_def["fields_alias"];
+
+        const info_url = lyr_def["url"].replace("{bbox}",`${lat-0.0001},${lng-0.0001},${lat+0.0001},${lng+0.0001}`); //v1.1.1: `${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`);
         // console.log(`Requesting info from ${lyr_id}\n ${info_url}`)
         const response = await fetch(info_url);
-
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
-        const result = await response.json(); //TODO: considering geojson. Implement text/plain or xml as fallback?
+        const response_txt = await response.text();
+        // console.log(response_txt)
+        let feature_props = {};
 
+        // json
         try {
-            const feature_props = result["features"][0]["properties"]
-            // Make table field:val fo
-            let out_html= "<table>"
-            for (let index = 0; index < fields.length; index++) {
+            const json_txt = JSON.parse(response_txt);
+            feature_props = json_txt["features"][0]["properties"]
+        } catch (error) {
+        // text/xml
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(response_txt, 'text/xml');
+                // console.log(xmlDoc)
+                const data_fields = xmlDoc.querySelector('FIELDS');
+                for (const attr of data_fields.attributes) {
+                    feature_props[attr.name] = attr.value;
+                }
+                
+            } catch (error) {
+                console.log("text xml error",error)
+            }
+        }
+        // console.log(feature_props)
+        // Filter only needed fields and Make table |field|val|
+        let out_html= "<table class='info-tbl' >"
+        for (let index = 0; index < fields.length; index++) {
+            try {
                 const k = fields[index];
                 let v = feature_props[k] ?? ""
                 if (v.startsWith("http")){
-                    v = `<a href="${v}">${v}</a>`
+                    v = `<a href="${v}">Link</a>`
                 }
-                out_html += `<tr><td><strong>${k}</strong></td> <td>${v}</td></tr>`
+                if (v && v!="" && String(v).toLowerCase() != "null"){
+                    out_html += `<tr><td><strong>${fields_alias[index]}</strong></td> <td>${v}</td></tr>`
+                }
             }
-            out_html+= "</table>"
-            return out_html
-        } catch (error) {
-            console.error(error.message);
-            return ""
+            catch (error) {
+                console.log("could not parse field")
+            }
         }
-        
-    } catch (error) {
-        console.error(error.message);
-        return ""
+    
+        out_html+= "</table>"
+        return out_html
+    }
+    catch (err_gfi) {
+        console.error(err_gfi)
     }
 
 }

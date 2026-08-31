@@ -91,6 +91,7 @@ Dependencies:
 
         const dc_w = 10; // Drill core profile width
 
+        const min_zoom_feature_info = 8; // min zoom to get info on click for WMS,WFS
         // Geojson objects
         // const bbox_by_poly = [8.97, 47.27, 13.84, 50.56]
         const bbox_by_poly = turf.polygon(
@@ -142,16 +143,16 @@ Dependencies:
         const map = new maplibregl.Map({
             container: 'map', // ID of the HTML element
             pitch: 55,
-            maxZoom: 16,
+            maxZoom: 18,
             maxPitch: 75,
             style: map_style,
             zoom: 8,
-            center: [11.4,48.5],
+            center: [11.5,48.5],
         });
         // Add default navigation controls (zoom/rotation buttons), scale 
         map.addControl(new maplibregl.NavigationControl({visualizePitch: true, showZoom: true, showCompass: true}), 'top-right');
         map.addControl(new maplibregl.ScaleControl({maxWidth: 100, unit: 'metric'}), 'bottom-left'); 
-        map.addControl(new maplibregl.TerrainControl({ source: 'by_relief', exaggeration: v_ex }));
+        map.addControl(new maplibregl.TerrainControl({ source: 'mapterhorn_terrain_src', exaggeration: v_ex }));
         map.addControl(new maplibregl.GeolocateControl({ }), 'bottom-right');
     
         //and custom controls
@@ -165,7 +166,7 @@ Dependencies:
         const get_info_popup = new maplibregl.Popup({
             closeButton: true,
             closeOnClick: true,
-            maxWidth:"none"
+            maxWidth:"400px"
         });
 
         // Map interaction
@@ -413,10 +414,17 @@ Dependencies:
                 }
                 }
             else{
+                let map_z = map.getZoom(); 
+                if (map_z<min_zoom_feature_info){
+                    return
+                }
                 // on click WMS layers with info: GetFeatureInfo
                 let popup_html =""
                 for (let index = 0; index < feature_info_layers.length; index++) {
                     const lyr_def = feature_info_layers[index];
+                    if (map_z<lyr_def["minzoom"] || map_z > lyr_def["maxzoom"]){
+                        continue
+                    }
                     const lyr_id = lyr_def["id"];
                     if (map.getLayoutProperty(lyr_id, 'visibility') != 'none'){ //visible
                         const lng = e.lngLat.lng;

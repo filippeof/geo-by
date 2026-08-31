@@ -8,3 +8,15 @@ rect{
     stroke-width:1px;
     stroke:rgba(60,60,60,60);
 }
+table .info-tbl{
+  width: 100%;       /* Makes table fill container up to constraints */
+  border-collapse: collapse;
+}
+td, th {
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+tr:nth-child(even) {
+  background-color: #eff8ff;
+}
