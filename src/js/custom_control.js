@@ -1,3 +1,5 @@
+const opacity_overlay = 0.5;// Opacity on second click on layer control
+
 class LayerControl {
   constructor(layers) {
     this.layers = layers;
@@ -101,7 +103,7 @@ class LayerControl {
         }
       
         const visibility = (lyr_current_state === 1 || lyr_current_state === 2) ? 'visible' : 'none';
-        const lyr_opacity = (lyr_current_state === 2) ? 0.6 : 1;
+        const lyr_opacity = (lyr_current_state === 2) ? opacity_overlay : 1;
         // const opacityProperty = `${layer.type}-opacity`; 
         this._map.setLayoutProperty(layer.id, 'visibility', visibility);
         try {
@@ -133,6 +135,7 @@ class LayerControl {
 }
 
 class ProfileControl {
+  // ELevation Profile control
   // constructor(layers) {
   //   this.layers = layers;
   // }
@@ -154,19 +157,26 @@ class ProfileControl {
 
     this._container.addEventListener('click', () => {
       // console.log(document.profile_tool_active)
+      //hide profile
       if (document.profile_tool_active){
         document.profile_tool_active = false;
         this._map.getCanvas().style.cursor = '';
         profile_icon_img.setAttribute("src","./src/img/profile_activate.png") 
         const ele_profile_container = document.getElementById("ele_profile_container")
         ele_profile_container.style.display = "none";
+        this._map.setLayoutProperty("profile-layer", 'visibility', 'none');
+        this._map.setLayoutProperty("pt-layer", 'visibility', 'none');
+
       }
       else{
+        //activate profile
         document.profile_tool_active = true;
         this._map.getCanvas().style.cursor = 'crosshair';
         profile_icon_img.setAttribute("src","./src/img/profile_deactivate.png")
         const ele_profile_container = document.getElementById("ele_profile_container")
         ele_profile_container.style.display = "block";
+        this._map.setLayoutProperty("profile-layer", 'visibility', 'visible');
+        this._map.setLayoutProperty("pt-layer", 'visibility', 'visible');
 
       }
     });

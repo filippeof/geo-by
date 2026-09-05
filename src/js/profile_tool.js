@@ -1,5 +1,66 @@
-const od_by_h_url = "https://geoservices.bayern.de/bvvapi/od/hoehen/v1/elevation/coord/{srid}/{x}/{y}" // ele for coordinate
-const od_by_h_list_url = "https://geoservices.bayern.de/bvvapi/od/hoehen/v1/elevation/list"             // ele for coordinate list
+const v_ex = 2 // Vertical exageration
+var clickedCoords = []; //PLaceholder coordinates of profile
+
+// Elevation Profile
+// const v_ex = 2.5 // Vertical exageration #TODO scale svgw,h # defined in map_defs.js
+const svg_horz_margin = 25; // horizontal, vertical margin
+const svg_vert_margin = 25;
+const svg_w = 950;  // svg width, heigth
+const svg_h = 210;
+const min_profile_depth = 100; // Minimum extra depth under minimum elevation (m)
+const n_elevation_pts = 200; // Number of coordinates to sample elevation along profile line
+
+// const profile_w_px = 20;    //Profile line stroke width in px
+var profile_distance = 0; //PLaceholder profile distance from start to end pt (km)
+const profile_tool_active = false;
+document.profile_tool_active = profile_tool_active; // Profile is active
+
+const dc_w = 10; // Drill core profile width
+
+const min_zoom_feature_info = 8; // min zoom to get info on click for WMS,WFS
+// Geojson objects
+// const bbox_by_poly = [8.97, 47.27, 13.84, 50.56]
+const bbox_by_poly = turf.polygon(
+    [
+        [
+        [9, 47.3],
+        [13.8, 47.3],
+        [13.8, 50.5],
+        [9, 50.5],
+        [9, 47.3],
+        ],
+    ],
+    { name: "bbox_by_poly" },
+);
+const geojson_profile = {
+    'type': 'FeatureCollection',
+    'features': [
+        // LINE
+        {
+            'type': 'Feature',
+            'geometry': {
+                'type': 'LineString',
+                'coordinates': [[0, 0]]
+            }
+        },
+        // START POINT
+        {
+            'type': 'Feature',
+            'geometry': {
+                'type': 'Point',
+                'coordinates': []
+            }
+        },
+        // END POINT
+        {
+            'type': 'Feature',
+            'geometry': {
+                'type': 'Point',
+                'coordinates': []
+            }
+        }
+    ]
+};
 // Profile
 
 function linspace(a,b,n_steps){
@@ -32,60 +93,16 @@ function make_coord_list(start_pt, end_pt, n_points){
     return coord_list
 }
 
-// async function get_elevation_list(coord_list){
-    //TODO cors issue: sampling from COG tiff instead
-//     // Get altitude from list of coordinates
-//         // Die Liste muss als JSON übermittelt werden.
-//         // Das Feld 'srid' gibt das Koordinatensystem der Eingangskoordinaten an und darf folgende Werte haben: 25832, 25833, 31468, 3857, 4326.
-//         // Die einzelnen Koordinaten dürfen bereits eine Höhe haben, diese wird jedoch ignoriert und schlussendlich überschrieben.
-//         // Die Liste darf maximal 4000 Punkte beinhalten.
-//         // Die Ausgabe erfolgt als JSON im selben Format wie die Eingabe, die Reihenfolge der Punkte bleibt unverändert.
-//         // Die Ausgabekoordinaten sind in dem Eingangskoordinatensystem.
-//         // Die Höhen sind immer im Höhenbezugssystem DHHN2016.
-//         // Die zurückgegebenen Koordinaten und Höhen sind gemäß gängigen Standards gerundet.
-//         // Alle Koordinaten, für die keine Höhe ermittelt werden konnte (z.B. weil außerhalb Bayerns), haben in der Rückgabe eine Höhe von 'null'.
-//     try {
-//         const response = await fetch(od_by_h_list_url, 
-//             {  
-//                 method: "POST",
-//                 headers: {
-//                     "Content-Type": "application/json",
-//                     // 'accept': 'application/json',
-//                 },
-//                 body: JSON.stringify({"srid": 4326,
-//                     "coords": coord_list
-//                 }),
-//             });
-//         if (!response.ok) {
-//         throw new Error(`Response status: ${response.status}`);
-//         }
+async function get_elevation_list(map,coord_list) {
 
-//         const result = await response.json();
-//         return result["coords"];
-//     } catch (error) {
-//         console.error(error.message);
-//     }
-//     }
-
-async function get_elevation_list(coord_list) {
     const promises = coord_list.map(async (coord) => {
-        const lng = coord[0];
-        const lat = coord[1];
-        
-        // using absolute path to github
-        // ${window.location.origin}/
-        const cogUrl = `https://filippeof.github.io/geo-by/src/data/srtm_by_cog.tif`;
-
+        // const lng = coord[0];
+        // const lat = coord[1];        
         try {
             // Get value
-            const px_val = await MaplibreCOGProtocol.locationValues(
-                cogUrl,
-                { "longitude": lng, "latitude": lat },
-                20
-            );
-            
-            // Return val (for rgb: [r,g,b])
-            return px_val ? px_val[0] : null; 
+            const px_val = map.queryTerrainElevation(coord)//, {exaggerated: false}); // elevation in m
+            // console.log(px_val)
+            return px_val? px_val/v_ex : null; //  /v_ex needed when exageration defined in map defs terrain, exagerated=false has no effect..
             
         } catch (err) {
             // console.error(`Error fetching coordinates [${lng}, ${lat}]:`, err);
@@ -100,7 +117,123 @@ async function get_elevation_list(coord_list) {
     // Filter out null?
     // return results.filter(item => item !== null);
 }
+
+async function show_elevation_profile(map){
+    // get coordinates along profile, 
+    // get elevation at coordinates, 
+    // get drill cores that intersect profile (+ buffer), 
+    // plot elevation profile and drill cores
+    // svg coordinates 
+    // |0,0 -----> X
+    // |        .
+    // v Y       100,100
+    // 
     
+    // sample coordinates along line (linspaced)
+    const start_pt = clickedCoords[0];
+    const end_pt = clickedCoords[1];
+    const coord_list = make_coord_list(start_pt,end_pt,n_elevation_pts);
+    // console.log("Coordinate list ", coord_list);
+    
+    // Get elevation for coordinate points
+    const ele_list = await get_elevation_list(map,coord_list);   
+    // const coord_ele_list = await get_elevation_list(coord_list); //rest
+    // const ele_list = coord_ele_list.map(ele => ele[2]); // Extract the elevation values [lon,lat,ele]
+    const max_ele = Math.max(...ele_list);
+    let min_ele = Math.min(...ele_list);
+    // Add buffer below min elevation (at least the same distance as elevation diference or min_profile_depth, whatever larger)
+    const profile_extra_depth = Math.max(...[(max_ele - min_ele), min_profile_depth]);
+    min_ele = min_ele - profile_extra_depth;
+    const dh = max_ele - min_ele;
+    // TODO calculate svg_h based on given v.ex.?
+    // const m2px_v = dh/svg_h;
+    // const m2px_h = 1e3*profile_distance/svg_w;
+    // console.log(`v ex: ${m2px_h/m2px_v}`)
+
+    var poly_str = `${svg_horz_margin},${svg_h+svg_vert_margin} `;
+    for (let i = 0; i < n_elevation_pts; i++) {
+        if (ele_list[i]){                   //!= null
+            let x = svg_horz_margin + (i * svg_w / (n_elevation_pts-1)); // Scale x to fit within the SVG width
+            let y = svg_h+svg_vert_margin - svg_h*((ele_list[i]-min_ele) / dh); // Scale y to fit within the SVG height
+            poly_str += `${x},${y} `;                                           // TODO: smooth path?
+        }
+    }
+    poly_str += `${svg_w+svg_horz_margin},${svg_h+svg_vert_margin} `;
+
+    // console.log("Elevation list for profile:", ele_list);
+    // Make elevation profile, set clip mask
+    const ele_profile =  document.getElementById("ele_profile_svg")
+    const polygon = ele_profile.getElementById("elevation_profile_poly");
+    const clip_poly = ele_profile.getElementById("profile_clip_poly");
+    polygon.setAttribute("points", poly_str);
+    clip_poly.setAttribute("points", poly_str);
+
+    // Set min/max elevation text
+    let min_ele_txt = ele_profile.querySelector("#min_ele_txt");
+    min_ele_txt.textContent = min_ele.toFixed(0);
+    min_ele_txt.setAttribute("y", svg_h+svg_vert_margin);
+    let max_ele_txt = ele_profile.querySelector("#max_ele_txt");
+    max_ele_txt.textContent = max_ele.toFixed(0);
+    max_ele_txt.setAttribute("y", svg_vert_margin);
+    let max_dist_txt = ele_profile.querySelector("#max_dist_txt");
+    max_dist_txt.textContent = `${profile_distance.toFixed(1)} km`
+    
+    // DRILL CORE
+    // Get drill core points within buffer profile
+    // Buffer profile 
+    // TODO: calculate buffer based on zoom: calculate how many km is profile width in px
+    let buffer_profile = (profile_w_px/2)*get_scale(map.getZoom(), start_pt[1]);
+    // buffer_profile = 0.5
+    const line_buffer = turf.buffer(geojson_profile, buffer_profile, { units: 'kilometers' });
+
+    // Get drill core intersect with buffered profile
+    const dc_intersect = turf.pointsWithinPolygon(dc_geojson, line_buffer);
+    // TODO: highlight selected?
+    let dc_group = ele_profile.getElementById("dc-profile-groups")
+    let dc_group_txt = "";
+    for (let ii = 0; ii < dc_intersect["features"].length; ii++) {
+        const obj =  dc_intersect["features"][ii];
+        const obj_id = obj["properties"]["oid"];
+        const obj_coords = obj["geometry"]["coordinates"];
+        const obj_data =  dc_layer_dict[obj_id];
+
+        let top_h = obj_data["dc_h"]; // current upper limit (will be set to previous units' lower limit)
+        const obj_dist = turf.distance(start_pt, obj_coords, {units: "kilometers"});
+        const dist_ratio = Math.min(Math.max(obj_dist/profile_distance,0),1)
+        let min_x = svg_horz_margin + svg_w*dist_ratio - dc_w/2;
+        if (obj_data!=undefined){
+            // Crete group containing all units of drill core as rect objects
+            dc_group_txt += `<g id="${obj_id}"> <title>${obj_id}</title>` 
+            const obj_units = obj_data["units"]
+            for (let jj = obj_units.length-1; jj >=0; jj--) {
+                const unit = obj_units[jj];
+                const lower_h = unit[0];
+                const unit_info = formations_dict[unit[1]]
+                const unit_long_name = unit_info[1]
+                const unit_c = unit_info[2];
+                const min_y = svg_h + svg_vert_margin - svg_h*((top_h-min_ele) / dh); // Scale y to fit within the SVG height
+                const max_y = svg_h + svg_vert_margin - svg_h*((lower_h-min_ele) / dh);
+                const rect_h = (max_y-min_y).toFixed(0)
+                if (rect_h>0){
+                    dc_group_txt += `<rect x="${min_x.toFixed(0)}" y="${min_y.toFixed(0)}" width="${dc_w}" height="${rect_h}" style="fill:${unit_c};"> 
+                                            <title>${unit_long_name}</title> </rect>`
+                    }
+                // console.log(`${ii}:${obj_id}[${jj}] Lower h:${lower_h}, top h:${top_h} min_y: ${min_y} max_y:${max_y}`)
+                top_h = lower_h;
+                // if further units are below elevation profile  min depth, stop 
+                if (top_h<min_ele){
+                    break
+                }
+            };
+            dc_group_txt += `</g>` //finish group
+
+        } 
+    }
+    dc_group.innerHTML =  dc_group_txt;
+    // TODO: if overlapping drill cores in profile, get deepest> get first
+    // TODO: export profile? make report (units, legend)
+    // TODO: make rectangle profile: interpolate units( simplify by serie?)
+}
 
 async function get_feature_info(lng,lat,lyr_def){
 // Get WMS feature info
@@ -136,7 +269,7 @@ async function get_feature_info(lng,lat,lyr_def){
                 }
                 
             } catch (error) {
-                console.log("text xml error",error)
+                // console.log("text xml error",error)
             }
         }
         // console.log(feature_props)
@@ -170,7 +303,9 @@ async function get_feature_info(lng,lat,lyr_def){
 function download_profile(out_filename='ele_profile.svg'){
     // Download elevation profile as svg
     // Make it svg string
-    const profile_svg_str = document.getElementById("ele_profile_svg").outerHTML;
+    const prefix_xml = '<?xml version="1.0" encoding="utf-8"?>'
+
+    const profile_svg_str = prefix_xml+document.getElementById("ele_profile_svg").outerHTML;
     // Make blob
     const svgBlob = new Blob([profile_svg_str], { type: 'image/svg+xml;charset=utf-8' });
     const blobUrl = URL.createObjectURL(svgBlob);
