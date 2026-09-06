@@ -10,7 +10,7 @@ const svg_h = 210;
 const min_profile_depth = 100; // Minimum extra depth under minimum elevation (m)
 const n_elevation_pts = 200; // Number of coordinates to sample elevation along profile line
 
-// const profile_w_px = 20;    //Profile line stroke width in px
+const profile_w_px = 20;    //Profile line stroke width in px
 var profile_distance = 0; //PLaceholder profile distance from start to end pt (km)
 const profile_tool_active = false;
 document.profile_tool_active = profile_tool_active; // Profile is active

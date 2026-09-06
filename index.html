@@ -8,11 +8,11 @@ Dependencies:
 <html lang='en'>
   <head>
     <meta charset='UTF-8'>
-    <title>GEO3-BY</title>
+    <title>GEO3</title>
     <meta name="author" content="Filippe F.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="icon" href="src/img/by_profi.ico">
+    <link rel="icon" href="src/img/geo3_profile.ico">
 
     <!-- Maplibre -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^6.6.0/dist/maplibre-gl.css" />
@@ -23,8 +23,8 @@ Dependencies:
 
      <!-- style -->
     <link rel='stylesheet' href='src/css/style.css'>
-    <!-- Profile tools -->
-    <script src='src/js/profile_tool.js'></script>
+    <!-- Elevation, Profile, Feature info tools -->
+    <script src='src/js/data_utils.js'></script>
     <!-- Map definitions, layers style -->
     <script src='src/js/map_defs.js'></script>
     <!-- Layer, Profile Controls -->
@@ -72,7 +72,7 @@ Dependencies:
         import * as maplibregl from 'https://unpkg.com/maplibre-gl@^6.6.0/dist/maplibre-gl.mjs';
 
         //add geojson sources to map style
-        map_style.sources["dc_lyr_src"]["data"] = dc_geojson;
+        map_style.sources["dc_lyr_src"]["data"] = dc_geojson;//TODO: Use relative path to geojson instead?
         map_style.sources["profile_lyr_src"]["data"] = geojson_profile;
         
         // Initialize the map
@@ -81,29 +81,33 @@ Dependencies:
             pitch: 55,
             minZoom: 4,
             maxZoom: 18,
-            maxPitch: 75,
+            maxPitch: 80,
             style: map_style,
             zoom: 8,
             center: [11.5,48.5],
+            terrainSkirtLength: 'none'
         });
+
         // Add default navigation controls (zoom/rotation buttons), scale 
-        map.addControl(new maplibregl.NavigationControl({visualizePitch: true, showZoom: true, showCompass: true}), 'top-right');
         map.addControl(new maplibregl.ScaleControl({maxWidth: 100, unit: 'metric'}), 'bottom-left'); 
-        map.addControl(new maplibregl.TerrainControl({ source: 'mapterhorn_terrain_src', exaggeration: v_ex }));
         map.addControl(new maplibregl.GeolocateControl({ }), 'bottom-right');
-    
-        //and custom controls
-        map.addControl(new LayerControl(layerList), 'top-right');
+        map.addControl(new maplibregl.NavigationControl({visualizePitch: true, showZoom: true, showCompass: true}), 'top-right');
+        map.addControl(new maplibregl.TerrainControl({ source: 'mapterhorn_terrain_src', exaggeration: v_ex }), 'top-right');
+        //add custom controls
+        map.addControl(new LayerControl(layer_control_list), 'top-right');
         map.addControl(new ProfileControl(), 'top-right');
+
         // Create popup
+        // Drill core
         const dc_popup = new maplibregl.Popup({
             closeButton: false,
             closeOnClick: false
         });
+        // WMS Feature info popup
         const get_info_popup = new maplibregl.Popup({
             closeButton: true,
             closeOnClick: true,
-            maxWidth:"400px"
+            maxWidth:"350px"
         });
 
         // Map interaction
@@ -139,8 +143,9 @@ Dependencies:
         
         //POPUP DRILL CORES
         map.on('mousemove', 'dc-layer', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            const obj_id = e.features[0].properties["oid"];
+            const feat = e.features[0]
+            const coordinates = feat.geometry.coordinates.slice();
+            const obj_id = feat.properties["oid"];
             // console.log(obj_id);
             // Ensure that if the map is zoomed out such that multiple
             // copies of the feature are visible, the popup appears
@@ -149,7 +154,6 @@ Dependencies:
             //     coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
             // }
             const cur_dc_data = dc_layer_dict[obj_id] ?? {"dc_h":"N/A","max_d":"N/A"};
-            // console.log("Clicked drill core:", obj_id, "Data:", cur_dc_data);
             const popup_html = `<strong>${obj_id}</strong> <br> 
                           <a>Altitude: ${cur_dc_data["dc_h"]} m </a> <br> 
                           <a>Max Depth: ${cur_dc_data["max_d"]} m</a>`;
@@ -171,30 +175,7 @@ Dependencies:
         });
         //TODO: if hover over svg profile, highlight in geojson line profile?
         
-        // Profile
-
-        
-
-        function toggle_edit_profile(e) {
-            if (document.profile_tool_active) {
-                // Hide Profile
-                e.srcElement.value = "Create Profile"
-                document.profile_tool_active = false;
-                map.getCanvas().style.cursor = '';
-                console.log("Profile tool stopped");
-                const profile_container = document.getElementById("profile_container")
-                profile_container.style.display = "none";
-                clickedCoords = []; // Reset if already have two points
-            } else {
-                // Show Profile
-                document.profile_tool_active = true;
-                map.getCanvas().style.cursor = 'crosshair';
-                e.srcElement.value = "Stop Profile"
-                const profile_container = document.getElementById("profile_container")
-                profile_container.style.display = "block";
-                console.log("Profile tool started");
-            }
-        }
+        // Profile        
 
         map.on('click', async (e) => {
             if (document.profile_tool_active == true){
@@ -203,13 +184,15 @@ Dependencies:
                 if (clickedCoords.length == 2) {
                     clickedCoords = []; // Reset if already have two points
                 }
-                if (turf.booleanWithin(turf.point(lngLat), bbox_by_poly)) {                      
-                    clickedCoords.push(lngLat);
-                    }
-                else{
-                    alert("Point outside BY")
-                    return
-                }
+                // Filter inside bbox
+                // if (turf.booleanWithin(turf.point(lngLat), bbox_by_poly)) {                      
+                //     clickedCoords.push(lngLat);
+                //     }
+                // else{
+                //     alert("Point outside BY")
+                //     return
+                // }
+                clickedCoords.push(lngLat);
 
                 // console.log(`Click ${clickedCoords.length}:`, lngLat);
                 if (clickedCoords.length == 1) {
@@ -226,7 +209,7 @@ Dependencies:
                     progress_dialog.showModal();
                     // Make elevation profile
                     geojson_profile.features[2].geometry.coordinates = lngLat; // Update end point
-                    geojson_profile.features[0].geometry.coordinates = clickedCoords;
+                    geojson_profile.features[0].geometry.coordinates = clickedCoords; // Update line
                     map.getSource('profile_lyr_src').setData(geojson_profile);
                     profile_distance = turf.distance(clickedCoords[0],clickedCoords[1],{units:"kilometers"});
                     show_elevation_profile(map)  

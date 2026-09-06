@@ -42,32 +42,34 @@ class LayerControl {
 
     // Set initial visibility on map load
     this._map.on('load', () => {
-      this.layers.forEach(layer => {
-        if (this._map.getLayer(layer.id)) {
-          const visibility = layer.visible ? 'visible' : 'none';
-          this._map.setLayoutProperty(layer.id, 'visibility', visibility);
+      this.layers.forEach(group_layer => {
+        const visibility = group_layer.visible ? 'visible' : 'none';
+        for (const layer_id of group_layer.id_list) {
+          if (this._map.getLayer(layer_id)) {
+              this._map.setLayoutProperty(layer_id, 'visibility', visibility);
+          }
         }
       });
     });
 
     // Build the checkbox list
     this.layer_state = {}; //id: 0(checked=false),1(checked),2(checked, indeterminate)
-    this.layers.reverse().forEach(layer => {
+    this.layers.reverse().forEach(group_layer => {
       const item = document.createElement('div');
       item.style.marginBottom = '4px';
       item.style.display = 'flex';
       item.style.alignItems = 'center';
 
       const label = document.createElement('label');
-      label.htmlFor = `cbx-${layer.id}`;
-      label.textContent = layer.name;
+      label.htmlFor = `cbx-${group_layer.id}`;
+      label.textContent = group_layer.name;
       label.style.cursor = 'pointer';
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.id = `cbx-${layer.id}`;
-      checkbox.checked = layer.visible;
-      this.layer_state[layer.id] = layer.visible ? 1 : 0; 
+      checkbox.id = `cbx-${group_layer.id}`;
+      checkbox.checked = group_layer.visible;
+      this.layer_state[group_layer.id] = group_layer.visible ? 1 : 0; 
       checkbox.style.marginRight = '6px';
       checkbox.style.cursor = 'pointer';
       checkbox.indeterminate = false;
@@ -87,10 +89,10 @@ class LayerControl {
       // });
       checkbox.addEventListener('click', (e) => {
         // e.preventDefault();
-        let lyr_current_state = this.layer_state[layer.id];
+        let lyr_current_state = this.layer_state[group_layer.id];
         lyr_current_state = (lyr_current_state + 1) % 3;
         // console.log(lyr_current_state)
-        this.layer_state[layer.id] = lyr_current_state;
+        this.layer_state[group_layer.id] = lyr_current_state;
         if (lyr_current_state === 0) {
           e.target.checked = false;
           e.target.indeterminate = false;
@@ -105,16 +107,20 @@ class LayerControl {
         const visibility = (lyr_current_state === 1 || lyr_current_state === 2) ? 'visible' : 'none';
         const lyr_opacity = (lyr_current_state === 2) ? opacity_overlay : 1;
         // const opacityProperty = `${layer.type}-opacity`; 
-        this._map.setLayoutProperty(layer.id, 'visibility', visibility);
-        try {
-          this._map.setPaintProperty(layer.id, 'raster-opacity', lyr_opacity);
-        } catch (err) {
+        for (const layer_id of group_layer.id_list) {
+          this._map.setLayoutProperty(layer_id, 'visibility', visibility);
           try {
-            this._map.setPaintProperty(layer.id, 'fill-opacity', lyr_opacity);
-          } catch (err2) {
-            // console.log(err,err2)
+            this._map.setPaintProperty(layer_id, 'raster-opacity', lyr_opacity);
+          } catch (err) {
+            try {
+              this._map.setPaintProperty(layer_id, 'fill-opacity', lyr_opacity);
+            } catch (err2) {
+              // console.log(err,err2)
+            }
           }
         }
+      //Force redraw of map as layer visibility/paint changes
+      this._map.redraw();
       });
 
       item.appendChild(checkbox);

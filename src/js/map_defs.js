@@ -1,15 +1,15 @@
-const layerList = [
-    {id: 'mapterhorn_hillshade', name: "Hillshade", visible: true},
-    {id: 'osm-layer', name: "OSM", visible: true},
-    {id: 'satellite', name: "Satellite", visible: false},
-    {id: 'by_webkarte', name: "BY Webkarte", visible: false},
-    {id: 'by_geo', name: "Geo 1:25:000", visible: true},
-    {id: 'guek250_de', name: "Geo - 1:250.000", visible: true},
-    // {id: 'profile-layer', name: "Profile", visible: true},
-    // {id: 'pt-layer', name: "Point", visible: true},
-    {id: 'dc-layer', name: "Drill cores", visible: true} 
+const layer_control_list = [
+    // {id: "layer group id", id_list: ['layer1 id','layer2 id',...], name: "Group name", visible: starts visible (true/false)},
+    // {id: "hillshade", id_list: ['mapterhorn_hillshade'], name: "Hillshade", visible: true},
+    {id: "basemap_overview", id_list: ['osm-layer'], name: "OSM", visible: true},
+    {id: "satellite", id_list: ['satellite'], name: "Satellite", visible: false},
+    // {id: , id_list: 'by_webkarte', name: "BY Webkarte", visible: false},
+    {id: "geo_regional", id_list: ['by_geo'], name: "Geo: Regional", visible: true},
+    {id: "geo_overview", id_list: ["guek250_de","gk500_at"], name: "Geo: Overview", visible: true},
+    // {id: , id_list: 'profile-layer', name: "Profile", visible: true},
+    // {id: , id_list: 'pt-layer', name: "Point", visible: true},
+    {id: "drill_core_pt", id_list: ['dc-layer'], name: "Drill cores", visible: true} 
 ];
-const profile_w_px = 20; // defined in document as well
 const map_style = {
     version: 8,
     sources: {
@@ -20,7 +20,10 @@ const map_style = {
         'dc_lyr_src':{
             type: 'geojson',
             data: {},//dc_geojson
-            attribution: '<a href="www.lfu.bayern.de">Bohrungen, Bayerisches Landesamt für Umwelt</a>'
+            // cluster: true,            
+            // clusterMaxZoom: 8,       
+            // clusterRadius: 50,         
+            attribution: '<a href="https://www.lfu.bayern.de">Bohrungen, Bayerisches Landesamt für Umwelt</a>'
 
         },    
         "by_geo":{
@@ -30,7 +33,7 @@ const map_style = {
             "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?&service=WMS&request=GetMap&layers=geoleinheit_dgk25%2Cstrukturln_dgk25&styles=&format=image%2Fpng32&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}"
             ],
             tileSize: 256,
-            attribution: '<a href="www.lfu.bayern.de">DGK25, Bayerisches Landesamt für Umwelt</a>'
+            attribution: '<a href="https://www.lfu.bayern.de">DGK25, Bayerisches Landesamt für Umwelt</a>'
 
         },
         "guek250_de":{
@@ -48,26 +51,25 @@ const map_style = {
             // "https://gis.geosphere.at/images/rest/services/geologie/karte_50/ImageServer/WMTS/tile/1.0.0/geologie_karte_50/default/GoogleMapsCompatible/{z}/{y}/{x}.png"
             ],
             tileSize: 256,
-            attribution: 'GÜK250 (WMS), (c) BGR, Hannover, 2019'
+            attribution: 'GK500, GeoSphere Austria'
         },
         
-        
-        "by_webkarte": {
-            type: 'raster',
-            tiles: [
-                'https://wmtsod1.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod2.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod3.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod4.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod5.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod6.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod7.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod8.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-                'https://wmtsod9.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}'
-            ],
-            tileSize: 256,
-            attribution: 'Geobasisdaten: Bayerische Vermessungsverwaltung (Daten verändert)'
-        },
+        // "by_webkarte": {
+        //     type: 'raster',
+        //     tiles: [
+        //         'https://wmtsod1.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod2.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod3.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod4.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod5.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod6.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod7.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod8.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
+        //         'https://wmtsod9.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}'
+        //     ],
+        //     tileSize: 256,
+        //     attribution: 'Geobasisdaten: Bayerische Vermessungsverwaltung (Daten verändert)'
+        // },
         // "by_vector":{
         //     type: 'vector',
         //     tiles: [
@@ -77,9 +79,15 @@ const map_style = {
         "satellite": {
                 "type": "raster",
                 "tiles": [
-                    "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg"
-                ],
-                "tileSize": 256
+                    "https://a.tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2025_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg",
+                    "https://b.tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2025_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg",
+                    "https://c.tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2025_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg",
+                    "https://d.tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2025_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg",
+                    ],
+                maxzoom: 14,       
+                tileSize: 256,
+                attribution: '<a href="https://cloudless.eox.at"> EOxCloudless - EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2025)</a>'
+
         },
         'osm-raster-tiles': {
             type: 'raster',
@@ -89,7 +97,6 @@ const map_style = {
                 'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
             ],
             tileSize: 256,
-            opacity: 0.5,
             attribution: '© OpenStreetMap contributors'
         },
         // "by_relief": {
@@ -102,10 +109,14 @@ const map_style = {
         'mapterhorn_terrain_src': {
             type: 'raster-dem',
             url: 'https://tiles.mapterhorn.com/tilejson.json',
+            tileSize: 256,
+            maxzoom: 12,       
         },
         'mapterhorn_hillshade_src': {
             type: 'raster-dem',
             url: 'https://tiles.mapterhorn.com/tilejson.json',
+            tileSize: 256,
+            maxzoom: 12,  
         }
         
     },
@@ -126,47 +137,51 @@ const map_style = {
             type: 'hillshade',
             source: 'mapterhorn_hillshade_src',
             paint: {                     
-            'hillshade-method': 'standard',
-            'hillshade-illumination-direction': 315,
-            'hillshade-shadow-color': '#000000',
-            'hillshade-highlight-color': '#FFFFFF',
-            'hillshade-accent-color': '#000000',
-            'hillshade-exaggeration': 0.5
+                'hillshade-method': 'standard',
+                'hillshade-illumination-direction': 315,
+                'hillshade-shadow-color': '#2e1f1f',
+                'hillshade-highlight-color': '#FFFFFF',
+                'hillshade-accent-color': '#000000',
+                'hillshade-exaggeration': 0.5
             }
         },
         {
-            "id": "satellite",
-            "type": "raster",
-            "source": "satellite"
+            id: "satellite",
+            type: "raster",
+            source: "satellite",
+            maxzoom: 16,
+            paint: {
+                'raster-opacity': 0.5 // 50% Opacity
+            }
         },
         {
             id: 'osm-layer',
             type: 'raster',
             source: 'osm-raster-tiles',
             minzoom: 0,
-            maxzoom: 12,
+            maxzoom: 18,
             paint: {
-                'raster-opacity': 0.75 // 75% Opacity
+                'raster-opacity': 0.5 // 50% Opacity
             }
         },
 
-        {
-            id: 'by_webkarte',
-            type: 'raster',
-            source: 'by_webkarte',
-            minzoom: 12,
-            maxzoom: 20,
-            paint: {
-                'raster-opacity': 0.75 // 75% Opacity
-            }
-        },
+        // {
+        //     id: 'by_webkarte',
+        //     type: 'raster',
+        //     source: 'by_webkarte',
+        //     minzoom: 12,
+        //     maxzoom: 20,
+        //     paint: {
+        //         'raster-opacity': 0.75 // 75% Opacity
+        //     }
+        // },
         
         {
             id: 'by_geo',
             type: 'raster',
             source: 'by_geo',
             paint: {
-                'raster-opacity': 0.75 // 50% Opacity
+                'raster-opacity': 0.5 // 50% Opacity
             },
             minzoom: 12,
             maxzoom: 20,
@@ -176,7 +191,7 @@ const map_style = {
             type: 'raster',
             source: 'guek250_de',
             paint: {
-                'raster-opacity': 0.75 // 50% Opacity
+                'raster-opacity': 0.5 // 50% Opacity
             },
             minzoom: 9,
             maxzoom: 12,
