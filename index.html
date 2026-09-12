@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<!-- Plots elevation profile with drill core data from Bayern
+<!-- Geological mpas in 3d and elevation profile +Drill cores
 Dependencies:
- https://github.com/Turfjs/turf
  https://github.com/maplibre/maplibre-gl-js/
- 
+ https://github.com/Turfjs/turf     
 -->
 <html lang='en'>
   <head>
@@ -38,25 +37,22 @@ Dependencies:
     <div id="map"></div>
 
     <div id="ele_profile_container" style="display: none;">
-        <svg xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 1000 250" id= "ele_profile_svg">
+        <svg xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 1000 300" id= "ele_profile_svg">
             <defs>
                 <!-- Clip polygon: points set dinamically for each profile-->
                 <clipPath id="profile_clip">
-                    <polygon id="profile_clip_poly" points="20,20 950,20 950,230 20,230" fill="white"/> 
+                    <polygon id="profile_clip_poly" points="50,25 950,25 950,250 50,250" fill="white"/> 
                 </clipPath>
             </defs>
             <!-- Label -->
             <g id= "profile_txt_group" >
-                <line id="max_ele_line" x1="30" y1="20" x2="970" y2="20" stroke="#000000" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4,4"/>
-                <text id="ele_txt" text-anchor="middle" transform="translate(5,120) rotate(90)" class="ele_profile_txt">Elevation (m)</text>
-                <text id="min_ele_txt" x="2" y="20" class="ele_profile_txt">_</text>
-                <text id="max_ele_txt" x="2" y="230" class="ele_profile_txt">_</text>
-                
-                <text id="max_dist_txt" text-anchor="end"  x="975" y="248" class="ele_profile_txt">_</text>
-                <text id="dist_txt" text-anchor="middle" x="480" y="248" class="ele_profile_txt">Distance (km)</text>
+                <line id="max_ele_line" x1="50" y1="25" x2="970" y2="25" stroke="#000000" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4,4"/>
+                <text id="ele_txt" text-anchor="middle" transform="translate(2,150) rotate(90)" class="ele_profile_label">Elevation (m)</text>
+                <text id="dist_txt" text-anchor="middle" x="515" y="298" class="ele_profile_label">Distance (km)</text>
             </g>
+            
             <!-- Elevation profile polygon: points set dinamically for each profile -->
-            <polygon id="elevation_profile_poly" points="20,20 950,20 950,230 20,230" fill="white" stroke="black" stroke-width="2"/>
+            <polygon id="elevation_profile_poly" points="50,25 950,25 950,250 50,250" fill="white" stroke="black" stroke-width="2"/>
             <!-- Drill cores -->
             <!-- All items in clip-group are clipped to Boundary polygon -->
             <g id= "clip-group" clip-path="url(#profile_clip)">
@@ -65,6 +61,7 @@ Dependencies:
             </g>
 
         </svg>
+        <!-- Download SVG -->
         <input id="ele_profile_download" type="button" value="💾" onclick="download_profile()"></input>
     </div>
     <script type="module">
@@ -78,13 +75,13 @@ Dependencies:
         // Initialize the map
         const map = new maplibregl.Map({
             container: 'map', // ID of the HTML element
-            pitch: 55,
+            pitch: 45,
             minZoom: 4,
             maxZoom: 18,
             maxPitch: 80,
             style: map_style,
-            zoom: 8,
-            center: [11.5,48.5],
+            zoom: 9,
+            center: [11.5,48.0],
             terrainSkirtLength: 'none'
         });
 
@@ -124,7 +121,7 @@ Dependencies:
                     // profile_distance = calc_distance(start_pt,end_pt); calculated at second click
                     // make sure is within profile 
                     const dist_ratio = Math.min(Math.max(hover_distance/profile_distance,0),1) 
-                    const line_x = svg_horz_margin + svg_w*dist_ratio;
+                    const line_x = svg_horz_margin + svg_poly_w*dist_ratio;
                     let svg_line = document.getElementById("cursor_ele_line");
                     svg_line.setAttribute("x1", line_x);
                     svg_line.setAttribute("x2", line_x);
@@ -207,15 +204,18 @@ Dependencies:
                     progress_dialog.innerHTML = "<p>Calculating Profile...</p>"
                     document.body.appendChild(progress_dialog);
                     progress_dialog.showModal();
-                    // Make elevation profile
-                    geojson_profile.features[2].geometry.coordinates = lngLat; // Update end point
-                    geojson_profile.features[0].geometry.coordinates = clickedCoords; // Update line
-                    map.getSource('profile_lyr_src').setData(geojson_profile);
-                    profile_distance = turf.distance(clickedCoords[0],clickedCoords[1],{units:"kilometers"});
-                    show_elevation_profile(map)  
-                    // Close dialog
-                    progress_dialog.close();           
-                    document.body.removeChild(progress_dialog);          
+                    setTimeout(() => {
+                        // Make elevation profile
+                        geojson_profile.features[2].geometry.coordinates = lngLat; // Update end point
+                        geojson_profile.features[0].geometry.coordinates = clickedCoords; // Update line
+                        map.getSource('profile_lyr_src').setData(geojson_profile);
+                        profile_distance = turf.distance(clickedCoords[0],clickedCoords[1],{units:"kilometers"});
+                        show_elevation_profile(map)
+                     
+                        // Close dialog
+                        progress_dialog.close();           
+                        document.body.removeChild(progress_dialog); 
+                    },50)      
                 }
                 else{
                     clickedCoords = []; // Reset for the next line
@@ -230,13 +230,20 @@ Dependencies:
                 let popup_html =""
                 for (let index = 0; index < feature_info_layers.length; index++) {
                     const lyr_def = feature_info_layers[index];
+                    // Check within zoom levels for layer
                     if (map_z<lyr_def["minzoom"] || map_z > lyr_def["maxzoom"]){
                         continue
                     }
+                    // Check within  layer's box
+                    let bbox = lyr_def["bbox"];
+                    const lng = e.lngLat.lng;
+                    const lat = e.lngLat.lat;
+                    if (lng<bbox[0] || lng > bbox[2] || lat < bbox[1] || lat > bbox[3]){
+                        continue
+                    }
+                    // Check layer is visible
                     const lyr_id = lyr_def["id"];
                     if (map.getLayoutProperty(lyr_id, 'visibility') != 'none'){ //visible
-                        const lng = e.lngLat.lng;
-                        const lat = e.lngLat.lat;
                         // Fetch info
                         const feature_info_tbl = await get_feature_info(lng, lat, lyr_def);
                         popup_html += `${feature_info_tbl}`;

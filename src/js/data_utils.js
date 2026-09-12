@@ -3,12 +3,15 @@ var clickedCoords = []; //PLaceholder coordinates of profile
 
 // Elevation Profile
 // const v_ex = 2.5 // Vertical exageration #TODO scale svgw,h # defined in map_defs.js
-const svg_horz_margin = 25; // horizontal, vertical margin
-const svg_vert_margin = 25;
-const svg_w = 950;  // svg width, heigth
-const svg_h = 210;
-const min_profile_depth = 100; // Minimum extra depth under minimum elevation (m)
-const n_elevation_pts = 200; // Number of coordinates to sample elevation along profile line
+const svg_horz_margin = 50;     // horizontal margin
+const svg_vert_margin = 25;     // vertical margin
+const svg_poly_w = 930;         // svg polygon width
+const svg_poly_h = 230;         // svg polygon heigth
+const n_x_ticks = 5;            // Number of ticks, tick labels in x axis
+const n_y_ticks = 3;            // Number of ticks, tick labels in y axis
+const tick_length = 2;          // tick stroke length
+const min_profile_depth = 100;  // Minimum extra depth under minimum elevation (m)
+const n_elevation_pts = 200;    // Number of coordinates to sample elevation along profile line
 
 const profile_w_px = 20;    //Profile line stroke width in px
 var profile_distance = 0; //PLaceholder profile distance from start to end pt (km)
@@ -20,18 +23,18 @@ const dc_w = 10; // Drill core profile width
 const min_zoom_feature_info = 8; // min zoom to get info on click for WMS,WFS
 // Geojson objects
 // const bbox_by_poly = [8.97, 47.27, 13.84, 50.56]
-const bbox_by_poly = turf.polygon(
-    [
-        [
-        [9, 47.3],
-        [13.8, 47.3],
-        [13.8, 50.5],
-        [9, 50.5],
-        [9, 47.3],
-        ],
-    ],
-    { name: "bbox_by_poly" },
-);
+// const bbox_by_poly = turf.polygon(
+//     [
+//         [
+//         [9, 47.3],
+//         [13.8, 47.3],
+//         [13.8, 50.5],
+//         [9, 50.5],
+//         [9, 47.3],
+//         ],
+//     ],
+//     { name: "bbox_by_poly" },
+// );
 const geojson_profile = {
     'type': 'FeatureCollection',
     'features': [
@@ -73,7 +76,7 @@ function linspace(a,b,n_steps){
 }
 
 function get_scale(z,lat){
-    // Get scale km/px at given latitude and map zoom
+    // Get scale (km/px) at given latitude and map zoom
     const res = 156.543 * Math.cos(lat*Math.PI/180) / (2 ** z);
     // console.log(z,lat,res)
     return res
@@ -145,44 +148,59 @@ async function show_elevation_profile(map){
     const profile_extra_depth = Math.max(...[(max_ele - min_ele), min_profile_depth]);
     min_ele = min_ele - profile_extra_depth;
     const dh = max_ele - min_ele;
-    // TODO calculate svg_h based on given v.ex.?
-    // const m2px_v = dh/svg_h;
-    // const m2px_h = 1e3*profile_distance/svg_w;
+    // TODO calculate svg_poly_h based on given v.ex.?
+    // const m2px_v = dh/svg_poly_h;
+    // const m2px_h = 1e3*profile_distance/svg_poly_w;
     // console.log(`v ex: ${m2px_h/m2px_v}`)
 
-    var poly_str = `${svg_horz_margin},${svg_h+svg_vert_margin} `;
+    var poly_str = `${svg_horz_margin},${svg_poly_h+svg_vert_margin} `;
     for (let i = 0; i < n_elevation_pts; i++) {
         if (ele_list[i]){                   //!= null
-            let x = svg_horz_margin + (i * svg_w / (n_elevation_pts-1)); // Scale x to fit within the SVG width
-            let y = svg_h+svg_vert_margin - svg_h*((ele_list[i]-min_ele) / dh); // Scale y to fit within the SVG height
+            let x = svg_horz_margin + (i * svg_poly_w / (n_elevation_pts-1)); // Scale x to fit within the SVG width
+            let y = svg_poly_h+svg_vert_margin - svg_poly_h*((ele_list[i]-min_ele) / dh); // Scale y to fit within the SVG height
             poly_str += `${x},${y} `;                                           // TODO: smooth path?
         }
     }
-    poly_str += `${svg_w+svg_horz_margin},${svg_h+svg_vert_margin} `;
+    poly_str += `${svg_poly_w+svg_horz_margin},${svg_poly_h+svg_vert_margin} `;
 
     // console.log("Elevation list for profile:", ele_list);
     // Make elevation profile, set clip mask
     const ele_profile =  document.getElementById("ele_profile_svg")
     const polygon = ele_profile.getElementById("elevation_profile_poly");
     const clip_poly = ele_profile.getElementById("profile_clip_poly");
+    const profile_txt_group =  ele_profile.getElementById("profile_txt_group");
     polygon.setAttribute("points", poly_str);
     clip_poly.setAttribute("points", poly_str);
 
-    // Set min/max elevation text
-    let min_ele_txt = ele_profile.querySelector("#min_ele_txt");
-    min_ele_txt.textContent = min_ele.toFixed(0);
-    min_ele_txt.setAttribute("y", svg_h+svg_vert_margin);
-    let max_ele_txt = ele_profile.querySelector("#max_ele_txt");
-    max_ele_txt.textContent = max_ele.toFixed(0);
-    max_ele_txt.setAttribute("y", svg_vert_margin);
-    let max_dist_txt = ele_profile.querySelector("#max_dist_txt");
-    max_dist_txt.textContent = `${profile_distance.toFixed(1)} km`
+    // Set elevation, distance text
+    //Remove existing ticks,labels
+    profile_txt_group.querySelectorAll(".ele_profile_ticks").forEach(element => {
+        profile_txt_group.removeChild(element)
+    });
+    // Ticks, Ticks Labels
+    const dist_txt_list = linspace(0, profile_distance, n_x_ticks);
+    const ele_txt_list = linspace(min_ele, max_ele, n_y_ticks);
+    //X ticks (Distance)
+    for (let ii = 0; ii < dist_txt_list.length; ii++) {
+        const dist = dist_txt_list[ii].toFixed(1);
+        const x_tick_pos = svg_horz_margin+svg_poly_w*(dist/profile_distance);
+        // const x_tick =document.createElement('text');
+        profile_txt_group.innerHTML +=`<text class="ele_profile_ticks" text-anchor="middle" x="${x_tick_pos}" y="${svg_vert_margin+svg_poly_h+20}">${dist}</text>`;
+        profile_txt_group.innerHTML +=`<line class="ele_profile_ticks" x1="${x_tick_pos}" y1="${svg_vert_margin+svg_poly_h+2}" x2="${x_tick_pos}" y2="${svg_vert_margin+svg_poly_h+2+tick_length}" stroke="black" />`;
+
+    }
+    //Y ticks (elevation)
+    for (let ii = 0; ii < ele_txt_list.length; ii++) {
+        const ele = ele_txt_list[ii].toFixed(0);
+        const y_tick_pos = svg_vert_margin+ svg_poly_h-svg_poly_h*((ele-min_ele)/(max_ele-min_ele));
+        profile_txt_group.innerHTML +=`<text class="ele_profile_ticks" text-anchor="end" dominant-baseline="middle" x="${svg_horz_margin-10}" y="${y_tick_pos}">${ele}</text>`;
+        profile_txt_group.innerHTML +=`<line class="ele_profile_ticks" x1="${svg_horz_margin-2-tick_length}" y1="${y_tick_pos}" x2="${svg_horz_margin-2}" y2="${y_tick_pos}" stroke="black"/>`;
+    }
     
     // DRILL CORE
     // Get drill core points within buffer profile
-    // Buffer profile 
-    // TODO: calculate buffer based on zoom: calculate how many km is profile width in px
-    let buffer_profile = (profile_w_px/2)*get_scale(map.getZoom(), start_pt[1]);
+    // Buffer profile based on zoom: how many km is profile width in px
+    let buffer_profile = (profile_w_px/2)*get_scale(map.getZoom(), (start_pt[1]+end_pt[1])/2); //km
     // buffer_profile = 0.5
     const line_buffer = turf.buffer(geojson_profile, buffer_profile, { units: 'kilometers' });
 
@@ -200,7 +218,7 @@ async function show_elevation_profile(map){
         let top_h = obj_data["dc_h"]; // current upper limit (will be set to previous units' lower limit)
         const obj_dist = turf.distance(start_pt, obj_coords, {units: "kilometers"});
         const dist_ratio = Math.min(Math.max(obj_dist/profile_distance,0),1)
-        let min_x = svg_horz_margin + svg_w*dist_ratio - dc_w/2;
+        let min_x = svg_horz_margin + svg_poly_w*dist_ratio - dc_w/2;
         if (obj_data!=undefined){
             // Crete group containing all units of drill core as rect objects
             dc_group_txt += `<g id="${obj_id}"> <title>${obj_id}</title>` 
@@ -211,8 +229,8 @@ async function show_elevation_profile(map){
                 const unit_info = formations_dict[unit[1]]
                 const unit_long_name = unit_info[1]
                 const unit_c = unit_info[2];
-                const min_y = svg_h + svg_vert_margin - svg_h*((top_h-min_ele) / dh); // Scale y to fit within the SVG height
-                const max_y = svg_h + svg_vert_margin - svg_h*((lower_h-min_ele) / dh);
+                const min_y = svg_poly_h + svg_vert_margin - svg_poly_h*((top_h-min_ele) / dh); // Scale y to fit within the SVG height
+                const max_y = svg_poly_h + svg_vert_margin - svg_poly_h*((lower_h-min_ele) / dh);
                 const rect_h = (max_y-min_y).toFixed(0)
                 if (rect_h>0){
                     dc_group_txt += `<rect x="${min_x.toFixed(0)}" y="${min_y.toFixed(0)}" width="${dc_w}" height="${rect_h}" style="fill:${unit_c};"> 
@@ -232,7 +250,7 @@ async function show_elevation_profile(map){
     dc_group.innerHTML =  dc_group_txt;
     // TODO: if overlapping drill cores in profile, get deepest> get first
     // TODO: export profile? make report (units, legend)
-    // TODO: make rectangle profile: interpolate units( simplify by serie?)
+    // TODO: make rectangle/cube profile: interpolate units(simplify by serie?), draw tool for 4 profiles (N,S,E,W)> create basic 3d Model (threejs?)
 }
 
 async function get_feature_info(lng,lat,lyr_def){
@@ -242,48 +260,71 @@ async function get_feature_info(lng,lat,lyr_def){
         const lyr_id = lyr_def["id"];
         const fields = lyr_def["fields"];
         const fields_alias = lyr_def["fields_alias"];
-
-        const info_url = lyr_def["url"].replace("{bbox}",`${lat-0.0001},${lng-0.0001},${lat+0.0001},${lng+0.0001}`); //v1.1.1: `${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`);
+        const info_format = lyr_def["info_format"];
+        const info_url = lyr_def["url"].replace("{bbox}",`${lat-0.0001},${lng-0.0001},${lat+0.0001},${lng+0.0001}`).replace("{bbox_xy}",`${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`); //v1.1.1: ;
         // console.log(`Requesting info from ${lyr_id}\n ${info_url}`)
         const response = await fetch(info_url);
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
         const response_txt = await response.text();
-        // console.log(response_txt)
+        // console.log(lyr_id,response_txt)
+        
         let feature_props = {};
-
-        // json
-        try {
-            const json_txt = JSON.parse(response_txt);
-            feature_props = json_txt["features"][0]["properties"]
-        } catch (error) {
-        // text/xml
+        let has_match = false
+        // geojson
+        if (info_format== "geojson"){
+            try {
+                const json_txt = JSON.parse(response_txt);
+                feature_props = json_txt["features"][0]["properties"]
+            } catch (error) {
+                console.log("text json error",error)
+            }
+        }
+        // ESRI xml
+        else if (info_format== "xml"){
             try {
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(response_txt, 'text/xml');
-                // console.log(xmlDoc)
                 const data_fields = xmlDoc.querySelector('FIELDS');
                 for (const attr of data_fields.attributes) {
                     feature_props[attr.name] = attr.value;
                 }
-                
             } catch (error) {
-                // console.log("text xml error",error)
+                console.log("text xml error",error)
             }
         }
+        //GML
+        else if (info_format== "gml"){
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(response_txt, 'text/xml');
+                // console.log(xmlDoc)
+                // const data_fields = xmlDoc.querySelector('{lyr_name}_feature');
+                for (const field_name of fields) {
+                    feature_props[field_name] =  xmlDoc.querySelector(field_name).innerHTML ?? "";
+                }
+            } catch (error) {
+                console.log("text gml error",error)
+            }
+        }
+        else{
+            console.log(`Can not parse format ${info_format}`)
+        }
+        
         // console.log(feature_props)
         // Filter only needed fields and Make table |field|val|
-        let out_html= "<table class='info-tbl' >"
+        let out_html= "<table class='info-tbl' >";
         for (let index = 0; index < fields.length; index++) {
             try {
                 const k = fields[index];
-                let v = feature_props[k] ?? ""
+                let v = feature_props[k] ?? "";
                 if (v.startsWith("http")){
                     v = `<a href="${v}">Link</a>`
                 }
                 if (v && v!="" && String(v).toLowerCase() != "null"){
-                    out_html += `<tr><td><strong>${fields_alias[index]}</strong></td> <td>${v}</td></tr>`
+                    out_html += `<tr> <td><strong>${fields_alias[index]}</strong></td> <td>${v}</td> </tr>`
+                    has_match = true;
                 }
             }
             catch (error) {
@@ -292,6 +333,10 @@ async function get_feature_info(lng,lat,lyr_def){
         }
     
         out_html+= "</table>"
+        if (!has_match){
+            out_html = ""
+        }
+
         return out_html
     }
     catch (err_gfi) {
