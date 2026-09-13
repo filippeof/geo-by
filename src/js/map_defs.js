@@ -4,8 +4,8 @@ const layer_control_list = [
     {id: "basemap_overview", id_list: ['osm-layer'], name: "OSM", visible: true},
     {id: "satellite", id_list: ['satellite'], name: "Satellite", visible: false},
     // {id: , id_list: 'by_webkarte', name: "BY Webkarte", visible: false},
-    {id: "geo_regional", id_list: ['by_geo',"geol50_fr"], name: "Geo: Regional", visible: true},
-    {id: "geo_overview", id_list: ["guek250_de","gk1000_de","geol1000_fr", "gk500_at"], name: "Geo: Overview", visible: true},
+    {id: "geo_regional", id_list: ['geo_25_de_by',"geo_50_fr","geo_100_it","geo_x_ch"], name: "Geo: Regional", visible: true},
+    {id: "geo_overview", id_list: ["geo_250_de","geo_1000_de","geo_1000_fr", "geo_500_at","geo_500_it"], name: "Geo: Overview", visible: true},
     // {id: , id_list: 'profile-layer', name: "Profile", visible: true},
     // {id: , id_list: 'pt-layer', name: "Point", visible: true},
     {id: "drill_core_pt", id_list: ['dc-layer'], name: "Drill cores", visible: true} 
@@ -23,11 +23,11 @@ const map_style = {
             // bounds:[8.97, 47.27, 13.84, 50.56],
             cluster: true,            
             clusterMaxZoom: 10,       
-            clusterRadius: 50,         
+            clusterRadius: 60,         
             attribution: '<a href="https://www.lfu.bayern.de">Bohrungen, Bayerisches Landesamt für Umwelt (Daten verändert)</a>'
         },  
         // GEO REGIONAL   
-        "by_geo":{
+        "geo_25_de_by":{
             type: 'raster',
             tiles: [
             //    "https://www.lfu.bayern.de/gdi/wms/geologie/gk500?service=WMS&request=GetMap&version=1.1.1&layers=haupteinheitgk500,strukturgk500&srs=EPSG:3857&format=image%2Fpng&transparent=true&styles=&width=256&height=256&bbox={bbox-epsg-3857}"
@@ -40,7 +40,7 @@ const map_style = {
 
         },
         // GEO OVERVIEW
-        "guek250_de":{
+        "geo_250_de":{
             type: 'raster',
             tiles: [
             "https://services.bgr.de/wms/geologie/guek250/?&service=WMS&request=GetMap&layers=7,10,11&styles=&format=image%2Fpng&transparent=true&version=1.3.0&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
@@ -50,7 +50,7 @@ const map_style = {
             tileSize: 256,
             attribution: 'GÜK250 (WMS), (c) BGR, Hannover, 2019'
         },
-        "gk1000_de":{
+        "geo_1000_de":{
             type: 'raster',
             tiles: [
             "https://services.bgr.de/wms/geologie/gk1000/?&service=WMS&request=GetMap&layers=0,2&styles=&format=image%2Fpng&transparent=true&version=1.3.0&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
@@ -60,18 +60,18 @@ const map_style = {
             tileSize: 256,
             attribution: 'GK1000 (WMS), (c) BGR, Hannover, 2019'
         },
-        "gk500_at":{
+        "geo_500_at":{
             type: 'raster',
             tiles: [
             "https://gis.geosphere.at/maps/services/geologie/karte_500/MapServer/WMSServer?&service=wms&version=1.3.0&request=GetMap&layers=0,1&styles=&format=image%2Fpng&transparent=true&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
-            // "https://gis.geosphere.at/images/rest/services/geologie/karte_50/ImageServer/WMTS/tile/1.0.0/geologie_karte_50/default/GoogleMapsCompatible/{z}/{y}/{x}.png"
+            // "https://gis.geosphere.at/images/rest/services/geologie/karte_50/ImageServer/WMTS/tile/1.0.0/geologie_karte_50/default/GoogleMapsCompatible/{z}/{y}/{x}.png"// scanned maps
             ],
             bounds:[8.9, 45.4, 17.8, 49.7],
             minzoom: 8,       
             tileSize: 256,
             attribution: 'GK500, GeoSphere Austria'
         },
-        "geol50_fr": {
+        "geo_50_fr": {
             type: 'raster',
             tiles: [
             "https://geoservices.brgm.fr/geologie?&service=WMS&version=1.3.0&request=GetMap&layers=SCAN_H_GEOL50&styles=&format=image%2Fpng&transparent=true&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
@@ -82,39 +82,48 @@ const map_style = {
             tileSize: 256,
             attribution: 'BRGM'
         },
-        "geol1000_fr": {
+        "geo_1000_fr": {
             type: 'raster',
             tiles: [
             "https://geoservices.brgm.fr/geologie?&service=WMS&version=1.3.0&request=GetMap&layers=LITHO_1M_SIMPLIFIEE&styles=&format=image%2Fpng&transparent=true&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
-                //SCAN_F_GEOL250, SCAN_D_GEOL50, SCAN_F_GEOL1M
             ],
             bounds:[-5.9, 41.17, 11.1, 51.15],
             minzoom: 6,       
             tileSize: 256,
             attribution: 'BRGM'
         },
-        // "by_webkarte": {
-        //     type: 'raster',
-        //     tiles: [
-        //         'https://wmtsod1.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod2.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod3.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod4.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod5.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod6.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod7.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod8.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}',
-        //         'https://wmtsod9.bayernwolke.de/wmts/by_webkarte/smerc/{z}/{x}/{y}'
-        //     ],
-        //     tileSize: 256,
-        //     attribution: 'Geobasisdaten: Bayerische Vermessungsverwaltung (Daten verändert)'
-        // },
-        // "by_vector":{
-        //     type: 'vector',
-        //     tiles: [
-        //         'https://vtod1.bayernwolke.de/styles/by_style_light.json' //TODO
-        //     ]
-        // },
+        "geo_100_it": {
+            type: 'raster',
+            tiles: [
+            "https://sinacloud.isprambiente.it/arcgisgeo/services/geo/SGI_ISPRA_geologia100K/MapServer/WMSServer?&service=WMS&version=1.3.0&request=GetMap&layers=1,2&styles=&format=image%2Fpng&transparent=true&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+            ],
+            bounds:[6.45, 35.2, 19.62, 47.14],
+            minzoom: 6,       
+            tileSize: 256,
+            attribution: 'ISPRAmbiente'
+        },
+        "geo_500_it": {
+            type: 'raster',
+            tiles: [
+            "https://sinacloud.isprambiente.it/arcgisgeo/services/geo/SGI_ISPRA_geologia100K/MapServer/WMSServer?&service=WMS&version=1.3.0&request=GetMap&layers=0&styles=&format=image%2Fpng&transparent=true&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+            ],
+            bounds:[6.45, 35.2, 19.62, 47.14],
+            minzoom: 6,       
+            tileSize: 256,
+            attribution: 'ISPRAmbiente'
+        },
+        "geo_x_ch": {
+            type: 'raster',
+            tiles: [
+            "https://wms.geo.admin.ch/?&service=WMS&version=1.3.0&request=GetMap&layers=ch.swisstopo.geologie-geocover&styles=&format=image%2Fpng&transparent=true&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+            ],
+            bounds:[5.14, 45.39, 11.48, 48.24],
+            minzoom: 8,       
+            tileSize: 256,
+            attribution: '© Data: swisstopo'
+        },
+        
+
         "satellite": {
                 "type": "raster",
                 "tiles": [
@@ -207,9 +216,9 @@ const map_style = {
         },
         
         {
-            id: 'by_geo',
+            id: 'geo_25_de_by',
             type: 'raster',
-            source: 'by_geo',
+            source: 'geo_25_de_by',
             paint: {
                 'raster-opacity': 0.5 // 50% Opacity
             },
@@ -217,9 +226,9 @@ const map_style = {
             maxzoom: 20,
         },
         {
-            id: 'guek250_de',
+            id: 'geo_250_de',
             type: 'raster',
-            source: 'guek250_de',
+            source: 'geo_250_de',
             paint: {
                 'raster-opacity': 0.5 // 50% Opacity
             },
@@ -227,9 +236,9 @@ const map_style = {
             maxzoom: 12,
         },
         {
-            id: 'gk1000_de',
+            id: 'geo_1000_de',
             type: 'raster',
-            source: 'gk1000_de',
+            source: 'geo_1000_de',
             paint: {
                 'raster-opacity': 0.5 // 50% Opacity
             },
@@ -237,9 +246,9 @@ const map_style = {
             maxzoom: 10,
         },
         {
-            id: 'gk500_at',
+            id: 'geo_500_at',
             type: 'raster',
-            source: 'gk500_at',
+            source: 'geo_500_at',
             paint: {
                 'raster-opacity': 0.5 // 50% Opacity
             },
@@ -247,9 +256,9 @@ const map_style = {
             maxzoom: 12,
         },
         {
-            id: 'geol50_fr',
+            id: 'geo_50_fr',
             type: 'raster',
-            source: 'geol50_fr',
+            source: 'geo_50_fr',
             paint: {
                 'raster-opacity': 0.5 // 50% Opacity
             },
@@ -257,9 +266,9 @@ const map_style = {
             maxzoom: 14,
         },
         {
-            id: 'geol1000_fr',
+            id: 'geo_1000_fr',
             type: 'raster',
-            source: 'geol1000_fr',
+            source: 'geo_1000_fr',
             paint: {
                 'raster-opacity': 0.5 // 50% Opacity
             },
@@ -267,23 +276,65 @@ const map_style = {
             maxzoom: 12,
         },
         {
-            id: 'dc-layer',
+            id: 'geo_100_it',
+            type: 'raster',
+            source: 'geo_100_it',
+            paint: {
+                'raster-opacity': 0.5 // 50% Opacity
+            },
+            minzoom: 11,
+            maxzoom: 14,
+        },
+        {
+            id: 'geo_500_it',
+            type: 'raster',
+            source: 'geo_500_it',
+            paint: {
+                'raster-opacity': 0.5 // 50% Opacity
+            },
+            minzoom: 6,
+            maxzoom: 11,
+        },
+        {
+            id: 'geo_x_ch',
+            type: 'raster',
+            source: 'geo_x_ch',
+            paint: {
+                'raster-opacity': 0.5 // 50% Opacity
+            },
+            minzoom: 8,
+            maxzoom: 14,
+        },
+        {
+            id: 'dc_layer_cluster',
             type: 'circle',
             source: 'dc_lyr_src',
             filter: ['has', 'point_count'],
+            // maxzoom:12,
+            minzoom:6,
             paint: {
                 // 'circle-radius': 6,
                 'circle-radius': [
                 'step',
                 ['get', 'point_count'],
-                6,
-                50,
-                10,
-                100,
-                14
+                10,10,
+                15,50,
+                20
                 ],
+                'circle-color': "#ff1e6260",     //
+                'circle-stroke-color': '#00151580', //80% opacity
+                'circle-stroke-width': 2          
+            },
+        },
+        {
+            id: 'dc-layer',
+            type: 'circle',
+            source: 'dc_lyr_src',
+            filter: ['!has', 'point_count'],
+            paint: {
+                'circle-radius': 6,
                 'circle-color': "#FF000060",     //60% opacity
-                'circle-stroke-color': '#ffffff80', //80% opacity
+                'circle-stroke-color': '#ffffff10', //80% opacity
                 'circle-stroke-width': 1          
             },
         },
@@ -307,7 +358,7 @@ const map_style = {
             source: 'profile_lyr_src',
             paint: {
                 'circle-radius': 6,
-                'circle-color': '#00ff00' 
+                'circle-color': '#02c402' 
             },
             filter: ['==', '$type', 'Point']
         }
@@ -322,41 +373,59 @@ const map_style = {
 
 // Get feture info layers
 const feature_info_layers = [
-    {"id":"by_geo",
+    {"id":"geo_25_de_by",
         "url": "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=geoleinheit_dgk25&query_layers=geoleinheit_dgk25&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=application/geojson", 
-        "fields": ["Kurzname der Geologischen Einheit", "Geologische Einheit","Gesteinsbeschreibung", "System (ggf. Ärathem)","URI Thesaurus"],
-        "fields_alias": ["Geol. Einheit - Kürzel", "Geol. Einheit","Gesteinsbeschreibung", "System /Ärathem","URI Thesaurus"],
+        "fields": ["Geologische Einheit","Gesteinsbeschreibung", "System (ggf. Ärathem)","URI Thesaurus"],
+        "fields_alias": ["Geological Unit", "Lithology", "Chronostratigraphy", "Unit Description"],
         "minzoom":12,
         "maxzoom":18,
         "info_format":"geojson",
         "bbox":[9, 47.3, 13.8, 50.5] //minx,miny,maxx,maxy
     },
-    {"id":"guek250_de",
+    {"id":"geo_250_de",
         "url": "https://services.bgr.de/wms/geologie/guek250?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=7&query_layers=7&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=text/xml", 
         "fields": ["Legendentext", "Stratigraphie - gesamt", "LithostratigraphieregionaleStratigraphie1", "LithostratigraphieregionaleStratigraphie2"],
-        "fields_alias": ["Chronostratigraphie", "Stratigraphie", "Lithostratigraphie 1", "Lithostratigraphie 2"],
+        "fields_alias": ["Description", "Chronostratigraphy", "Geological Unit 1", "Geological Unit 2"],
         "minzoom":6,
         "maxzoom":12,
         "info_format":"xml",
         "bbox":[5.562778, 47.141228, 15.575523, 55.085090]
     },
-    {"id":"gk500_at",
+    {"id":"geo_500_at",
         "url": "https://gis.geosphere.at/maps/services/geologie/karte_500/MapServer/WMSServer?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=0&query_layers=0&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=text/xml", 
-        "fields": ["LEGTEXT_DE","LITHOL_DE","ALTER_DE"], //"ADDTEXT_DE"
-        "fields_alias": ["Gol. Einheit","Petrographie", "Stratigraphie"],
+        "fields": ["LEGTEXT_EN","LITHOL_EN","ALTER_EN"], //"ADDTEXT_DE"
+        "fields_alias": ["Geological Unit","Lithology", "Chronostratigraphy"],
         "minzoom":6,
-        "maxzoom":12,
+        "maxzoom":18,
         "info_format":"xml",
         "bbox":[8.929691, 45.415079, 17.741731, 49.602938]
     },
-    {"id":"geol1000_fr",
-        // http://geoservices.brgm.fr/geologie?language=fre&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&BBOX=44.55907688971603875%2C5.40725381867864652%2C44.58781088727501185%2C5.44406402946037726&CRS=EPSG%3A4326&WIDTH=2&HEIGHT=2&LAYERS=LITHO_1M_SIMPLIFIEE&STYLES=&FORMAT=image%2Fpng&QUERY_LAYERS=LITHO_1M_SIMPLIFIEE&INFO_FORMAT=application%2Fvnd.ogc.gml&I=0&J=1&FEATURE_COUNT=10
+    {"id":"geo_1000_fr",
         "url": "https://geoservices.brgm.fr/geologie?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=LITHO_1M_SIMPLIFIEE&query_layers=LITHO_1M_SIMPLIFIEE&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=1&y=1&height=2&width=2&&I=0&J=1&info_format=application%2Fvnd.ogc.gml", 
         "fields": ["DESCR","TYPE"],
-        "fields_alias": ["Description", "Type"],
+        "fields_alias": ["Geological Unit", "Lithology"],
         "minzoom":6,
-        "maxzoom":12,
+        "maxzoom":18,
         "info_format":"gml",
         "bbox":[-5.86764, 41.1701, 11.0789, 51.1419]
+    },
+    {"id":"geo_100_it",
+        "url": "https://sinacloud.isprambiente.it/arcgisgeo/services/geo/SGI_ISPRA_geologia100K/MapServer/WMSServer?request=GetFeatureInfo&version=1.3.0&layers=1&query_layers=1&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=1&y=1&height=2&width=2&&I=0&J=1&info_format=text/xml", 
+        "fields": ["NOME_FORMAZIONE","ETA_FORMAZIONE"],
+        "fields_alias": ["Geological Unit", "Chronostratigraphy"],
+        "minzoom":6,
+        "maxzoom":18,
+        "info_format":"xml",
+        "bbox":[6.45, 35.2, 19.62, 47.14]
+    },
+    {"id":"geo_x_ch",
+        "url": "https://wms.geo.admin.ch/?&service=WMS&version=1.3.0&request=GetFeatureInfo&version=1.3.0&layers=ch.swisstopo.geologie-geocover&query_layers=ch.swisstopo.geologie-geocover&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=1&y=1&height=2&width=2&&I=0&J=1&info_format=application%2Fvnd.ogc.gml", 
+        "fields": ["ch\\.swisstopo\\.geologie-geocover\\.description_de\\.name","ch\\.swisstopo\\.geologie-geocover\\.litho_de\\.name","ch\\.swisstopo\\.geologie-geocover\\.chrono_de\\.name"],
+        "fields_alias": ["Geological Unit", "Lithology", "Chronostratigraphy"],
+        "minzoom":6,
+        "maxzoom":18,
+        "info_format":"gml",
+        "bbox":[5.14, 45.39, 11.48, 48.24]
     }
+
 ]

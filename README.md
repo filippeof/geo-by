@@ -14,9 +14,11 @@ https://filippeof.github.io/geo-by/
     - Regional maps
       - DE/BY:  DGK25: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de; Lizenz: CC BY 4.0
     - Overview maps
-      - DE: GÜK250: GÜK250 (WMS), (c) BGR, Hannover, 2019; Lizenz: dl-de/by
-      - AT: GK500: GeoSphere Austria; Lizenz: CC BY 4.0
-  
+      - DE: GÜK250,GK1000 (WMS), (c) BGR, Hannover, 2019; Lizenz: dl-de/by
+      - AT: GK500 GeoSphere Austria; Lizenz: CC BY 4.0
+      - FR: BRGM
+      - IT: ISPRAmbiente
+      - CH: © Data: swisstopo
   
   - Elevation data, Base maps
     - Geobasisdaten: Bayerische Vermessungsverwaltung – www.geodaten.bayern.de (Daten verändert), Lizenz: CC BY 4.0, © GeoBasis-DE / BKG 2022 (Daten verändert)

@@ -120,7 +120,19 @@ async function get_elevation_list(map,coord_list) {
     // Filter out null?
     // return results.filter(item => item !== null);
 }
-
+function show_cursor_profile(lng,lat){
+        const start_pt = turf.point(clickedCoords[0]);
+        const end_pt = turf.point(clickedCoords[1]);
+        const cur_pt = turf.point([lng,lat]);
+        const hover_distance = turf.distance(start_pt, cur_pt, {units: "kilometers"});
+        // profile_distance = calc_distance(start_pt,end_pt); calculated at second click
+        // make sure is within profile 
+        const dist_ratio = Math.min(Math.max(hover_distance/profile_distance,0),1) 
+        const line_x = svg_horz_margin + svg_poly_w*dist_ratio;
+        let svg_line = document.getElementById("cursor_ele_line");
+        svg_line.setAttribute("x1", line_x);
+        svg_line.setAttribute("x2", line_x);
+}
 async function show_elevation_profile(map){
     // get coordinates along profile, 
     // get elevation at coordinates, 
@@ -205,6 +217,7 @@ async function show_elevation_profile(map){
     const line_buffer = turf.buffer(geojson_profile, buffer_profile, { units: 'kilometers' });
 
     // Get drill core intersect with buffered profile
+    const dc_geojson = await  map.getSource('dc_lyr_src').getData(); 
     const dc_intersect = turf.pointsWithinPolygon(dc_geojson, line_buffer);
     // TODO: highlight selected?
     let dc_group = ele_profile.getElementById("dc-profile-groups")
@@ -268,7 +281,7 @@ async function get_feature_info(lng,lat,lyr_def){
             throw new Error(`Response status: ${response.status}`);
         }
         const response_txt = await response.text();
-        // console.log(lyr_id,response_txt)
+        console.log(lyr_id,response_txt)
         
         let feature_props = {};
         let has_match = false
@@ -299,7 +312,7 @@ async function get_feature_info(lng,lat,lyr_def){
             try {
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(response_txt, 'text/xml');
-                // console.log(xmlDoc)
+                console.log(xmlDoc)
                 // const data_fields = xmlDoc.querySelector('{lyr_name}_feature');
                 for (const field_name of fields) {
                     feature_props[field_name] =  xmlDoc.querySelector(field_name).innerHTML ?? "";

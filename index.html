@@ -29,7 +29,7 @@ Dependencies:
     <!-- Layer, Profile Controls -->
     <script src='src/js/custom_control.js'></script>
     <!-- Drill core data -->
-    <script src='src/js/dc_data.js'></script>
+    <script src='src/js/dc_units_de_by.js'></script>
 
   </head>
   <body>
@@ -41,22 +41,22 @@ Dependencies:
             <defs>
                 <!-- Clip polygon: points set dinamically for each profile-->
                 <clipPath id="profile_clip">
-                    <polygon id="profile_clip_poly" points="50,25 950,25 950,250 50,250" fill="white"/> 
+                    <polygon id="profile_clip_poly" points="50,25 950,25 950,255 50,255" fill="white"/> 
                 </clipPath>
             </defs>
             <!-- Label -->
             <g id= "profile_txt_group" >
                 <line id="max_ele_line" x1="50" y1="25" x2="970" y2="25" stroke="#000000" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4,4"/>
-                <text id="ele_txt" text-anchor="middle" transform="translate(2,150) rotate(90)" class="ele_profile_label">Elevation (m)</text>
+                <text id="ele_txt" text-anchor="middle" transform="translate(2,140) rotate(90)" class="ele_profile_label">Elevation (m)</text>
                 <text id="dist_txt" text-anchor="middle" x="515" y="298" class="ele_profile_label">Distance (km)</text>
             </g>
             
             <!-- Elevation profile polygon: points set dinamically for each profile -->
-            <polygon id="elevation_profile_poly" points="50,25 950,25 950,250 50,250" fill="white" stroke="black" stroke-width="2"/>
+            <polygon id="elevation_profile_poly" points="50,25 950,25 950,255 50,255" fill="white" stroke="black" stroke-width="2"/>
             <!-- Drill cores -->
             <!-- All items in clip-group are clipped to Boundary polygon -->
             <g id= "clip-group" clip-path="url(#profile_clip)">
-                <line id="cursor_ele_line" x1="20" y1="230" x2="20" y2="20" stroke="black" stroke-width="1"/>
+                <line id="cursor_ele_line" x1="20" y1="255" x2="20" y2="20" stroke="black" stroke-width="1"/>
                 <g id="dc-profile-groups"></g> <!-- dynamically fill with dcs -->
             </g>
 
@@ -69,7 +69,7 @@ Dependencies:
         import * as maplibregl from 'https://unpkg.com/maplibre-gl@^6.6.0/dist/maplibre-gl.mjs';
 
         //add geojson sources to map style
-        map_style.sources["dc_lyr_src"]["data"] = dc_geojson;//TODO: Use relative path to geojson instead?
+        map_style.sources["dc_lyr_src"]["data"] = "src/js/dc_de_by.geojson";//TODO: Use relative path to geojson file instead?
         map_style.sources["profile_lyr_src"]["data"] = geojson_profile;
         
         // Initialize the map
@@ -108,23 +108,13 @@ Dependencies:
         });
 
         // Map interaction
-        // Hover on  profile line
+        // Hover on  profile line: show cursor position on svg profile
         map.on('load', async () => {
             map.on('mousemove', 'profile-layer', (e) => {
                 // map.getCanvas().style.cursor = 'crosshair';
                 // console.log("Mousemove event on profile-layer:", e.lngLat);
                 if (clickedCoords.length == 2) {
-                    const start_pt = turf.point(clickedCoords[0]);
-                    const end_pt = turf.point(clickedCoords[1]);
-                    const cur_pt = turf.point([e.lngLat.lng,e.lngLat.lat]);
-                    const hover_distance = turf.distance(start_pt, cur_pt, {units: "kilometers"});
-                    // profile_distance = calc_distance(start_pt,end_pt); calculated at second click
-                    // make sure is within profile 
-                    const dist_ratio = Math.min(Math.max(hover_distance/profile_distance,0),1) 
-                    const line_x = svg_horz_margin + svg_poly_w*dist_ratio;
-                    let svg_line = document.getElementById("cursor_ele_line");
-                    svg_line.setAttribute("x1", line_x);
-                    svg_line.setAttribute("x2", line_x);
+                    show_cursor_profile(e.lngLat.lng,e.lngLat.lat)
                 }
             });
 
@@ -139,17 +129,14 @@ Dependencies:
 
         
         //POPUP DRILL CORES
-        map.on('mousemove', 'dc-layer', (e) => {
+        map.on('click', 'dc-layer', (e) => {
+            e.preventDefault(); //prevent handling general map click
+            e._click_handled = true; 
+            console.log("clicked",e)
             const feat = e.features[0]
             const coordinates = feat.geometry.coordinates.slice();
             const obj_id = feat.properties["oid"];
-            // console.log(obj_id);
-            // Ensure that if the map is zoomed out such that multiple
-            // copies of the feature are visible, the popup appears
-            // over the copy being pointed to.
-            // while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-            //     coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-            // }
+
             const cur_dc_data = dc_layer_dict[obj_id] ?? {"dc_h":"N/A","max_d":"N/A"};
             const popup_html = `<strong>${obj_id}</strong> <br> 
                           <a>Altitude: ${cur_dc_data["dc_h"]} m </a> <br> 
@@ -158,9 +145,13 @@ Dependencies:
             dc_popup.setLngLat(coordinates).setHTML(popup_html).addTo(map);
 
         });
-
-
-        // Change it back to a pointer when it leaves.
+        //  cursor to pointer when entering dc point
+        map.on('mouseenter', 'dc-layer', () => {
+            if (!document.profile_tool_active) {
+                map.getCanvas().style.cursor = 'pointer';
+            }
+        });
+        // Change it back when it leaves.
         map.on('mouseleave', 'dc-layer', () => {
             if (document.profile_tool_active) {
                 map.getCanvas().style.cursor = 'crosshair';
@@ -168,13 +159,17 @@ Dependencies:
             else{
                 map.getCanvas().style.cursor = '';
             }
-            dc_popup.remove();
+            // dc_popup.remove();
         });
         //TODO: if hover over svg profile, highlight in geojson line profile?
         
         // Profile        
 
         map.on('click', async (e) => {
+            if (e._click_handled) {
+                    return; // click handled already for layer
+             }
+            //  Drawing profile
             if (document.profile_tool_active == true){
                 // Extract [lng, lat] from the click event
                 const lngLat = [e.lngLat.lng, e.lngLat.lat];
@@ -186,7 +181,7 @@ Dependencies:
                 //     clickedCoords.push(lngLat);
                 //     }
                 // else{
-                //     alert("Point outside BY")
+                //     alert("Point outside BBOX")
                 //     return
                 // }
                 clickedCoords.push(lngLat);
@@ -197,7 +192,7 @@ Dependencies:
                     map.getSource('profile_lyr_src').setData(geojson_profile);
                     
                 }
-                // Two points clicked: update the line
+                // Two points clicked: update the profile line, create elevation profile
                 else if (clickedCoords.length == 2) {
                     // Show dialog
                     let progress_dialog = document.createElement("dialog");
@@ -215,39 +210,53 @@ Dependencies:
                         // Close dialog
                         progress_dialog.close();           
                         document.body.removeChild(progress_dialog); 
-                    },50)      
+                    }, 50)      
                 }
                 else{
                     clickedCoords = []; // Reset for the next line
                 }
-                }
+            }
+            //  Close poupup/ get Layer info
             else{
+                // If popup is open, just close it
+                if (get_info_popup && get_info_popup.isOpen()) {
+                    get_info_popup.remove();
+                    return;
+                }
+                 if (dc_popup && dc_popup.isOpen()) {
+                    dc_popup.remove();
+                    return;
+                }
+                // Otherwise check each feature info layer 
+                // Min zoom to get feature info?
                 let map_z = map.getZoom(); 
                 if (map_z<min_zoom_feature_info){
                     return
                 }
-                // on click WMS layers with info: GetFeatureInfo
+                // Get Feature info for each layer
                 let popup_html =""
                 for (let index = 0; index < feature_info_layers.length; index++) {
                     const lyr_def = feature_info_layers[index];
+                    // Check layer is not visible
+                    const lyr_id = lyr_def["id"];
+                    if (map.getLayoutProperty(lyr_id, 'visibility') == 'none'){ //visible
+                        continue
+                    }
                     // Check within zoom levels for layer
                     if (map_z<lyr_def["minzoom"] || map_z > lyr_def["maxzoom"]){
                         continue
                     }
-                    // Check within  layer's box
-                    let bbox = lyr_def["bbox"];
+                    // Check if click is within layer's bbox
+                    let bbox = lyr_def["bbox"] ?? [-180, -90, 180, 90];
                     const lng = e.lngLat.lng;
                     const lat = e.lngLat.lat;
                     if (lng<bbox[0] || lng > bbox[2] || lat < bbox[1] || lat > bbox[3]){
                         continue
                     }
-                    // Check layer is visible
-                    const lyr_id = lyr_def["id"];
-                    if (map.getLayoutProperty(lyr_id, 'visibility') != 'none'){ //visible
-                        // Fetch info
-                        const feature_info_tbl = await get_feature_info(lng, lat, lyr_def);
-                        popup_html += `${feature_info_tbl}`;
-                    }
+                    // Fetch info
+                    const feature_info_tbl = await get_feature_info(lng, lat, lyr_def);
+                    popup_html += `${feature_info_tbl}`;
+                   
                 }
                 if (popup_html!="") {
                     get_info_popup.setLngLat(e.lngLat).setHTML(popup_html).addTo(map);
