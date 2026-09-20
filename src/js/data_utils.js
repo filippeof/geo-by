@@ -312,7 +312,7 @@ async function get_feature_info(lng,lat,lyr_def){
             try {
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(response_txt, 'text/xml');
-                console.log(xmlDoc)
+                // console.log(xmlDoc)
                 // const data_fields = xmlDoc.querySelector('{lyr_name}_feature');
                 for (const field_name of fields) {
                     feature_props[field_name] =  xmlDoc.querySelector(field_name).innerHTML ?? "";
