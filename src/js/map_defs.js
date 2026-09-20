@@ -5,10 +5,10 @@ const layer_control_list = [
     {id: "satellite", id_list: ['satellite'], name: "Satellite", visible: false},
     // {id: , id_list: 'by_webkarte', name: "BY Webkarte", visible: false},
     {id: "geo_regional", id_list: ['geo_25_de_by',"geo_50_fr","geo_100_it","geo_x_ch"], name: "Geo: Regional", visible: true},
-    {id: "geo_overview", id_list: ["geo_250_de","geo_1000_de","geo_1000_fr", "geo_500_at","geo_500_it"], name: "Geo: Overview", visible: true},
+    {id: "geo_overview", id_list: ["geo_250_de","geo_1000_de","geo_1000_fr", "geo_500_at","geo_500_it","geo_1000_br"], name: "Geo: Overview", visible: true},
     // {id: , id_list: 'profile-layer', name: "Profile", visible: true},
     // {id: , id_list: 'pt-layer', name: "Point", visible: true},
-    {id: "drill_core_pt", id_list: ['dc-layer'], name: "Drill cores", visible: true} 
+    {id: "drill_core_pt", id_list: ['dc-layer','dc-layer-cluster'], name: "Drill cores", visible: true} 
 ];
 const map_style = {
     version: 8,
@@ -26,20 +26,7 @@ const map_style = {
             clusterRadius: 60,         
             attribution: '<a href="https://www.lfu.bayern.de">Bohrungen, Bayerisches Landesamt für Umwelt (Daten verändert)</a>'
         },  
-        // GEO REGIONAL   
-        "geo_25_de_by":{
-            type: 'raster',
-            tiles: [
-            //    "https://www.lfu.bayern.de/gdi/wms/geologie/gk500?service=WMS&request=GetMap&version=1.1.1&layers=haupteinheitgk500,strukturgk500&srs=EPSG:3857&format=image%2Fpng&transparent=true&styles=&width=256&height=256&bbox={bbox-epsg-3857}"
-            "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?&service=WMS&request=GetMap&layers=geoleinheit_dgk25%2Cstrukturln_dgk25&styles=&format=image%2Fpng32&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}"
-            ],
-            bounds:[8.97, 47.27, 13.84, 50.56],
-            minzoom: 12,       
-            tileSize: 256,
-            attribution: '<a href="https://www.lfu.bayern.de">DGK25, Bayerisches Landesamt für Umwelt</a>'
-
-        },
-        // GEO OVERVIEW
+        // DE
         "geo_250_de":{
             type: 'raster',
             tiles: [
@@ -60,6 +47,20 @@ const map_style = {
             tileSize: 256,
             attribution: 'GK1000 (WMS), (c) BGR, Hannover, 2019'
         },
+        //  BY 
+        "geo_25_de_by":{
+            type: 'raster',
+            tiles: [
+            //    "https://www.lfu.bayern.de/gdi/wms/geologie/gk500?service=WMS&request=GetMap&version=1.1.1&layers=haupteinheitgk500,strukturgk500&srs=EPSG:3857&format=image%2Fpng&transparent=true&styles=&width=256&height=256&bbox={bbox-epsg-3857}"
+            "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?&service=WMS&request=GetMap&layers=geoleinheit_dgk25%2Cstrukturln_dgk25&styles=&format=image%2Fpng32&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+            ],
+            bounds:[8.97, 47.27, 13.84, 50.56],
+            minzoom: 12,       
+            tileSize: 256,
+            attribution: '<a href="https://www.lfu.bayern.de">DGK25, Bayerisches Landesamt für Umwelt</a>'
+
+        },
+        // AT
         "geo_500_at":{
             type: 'raster',
             tiles: [
@@ -71,6 +72,7 @@ const map_style = {
             tileSize: 256,
             attribution: 'GK500, GeoSphere Austria'
         },
+        //FR
         "geo_50_fr": {
             type: 'raster',
             tiles: [
@@ -92,6 +94,7 @@ const map_style = {
             tileSize: 256,
             attribution: 'BRGM'
         },
+        //IT
         "geo_100_it": {
             type: 'raster',
             tiles: [
@@ -112,6 +115,7 @@ const map_style = {
             tileSize: 256,
             attribution: 'ISPRAmbiente'
         },
+        //CH
         "geo_x_ch": {
             type: 'raster',
             tiles: [
@@ -121,6 +125,20 @@ const map_style = {
             minzoom: 8,       
             tileSize: 256,
             attribution: '© Data: swisstopo'
+        },
+        //BR
+        "geo_1000_br": {
+            "type": "raster",
+            "tiles": [
+                "https://geoportal.sgb.gov.br/server/services/geologia/litoestratigrafia_1000000/MapServer/WMSServer?&service=WMS&version=1.3.0&request=GetMap&layers=0&styles=&format=image%2Fpng&transparent=true&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+                // "https://geoportal.sgb.gov.br/server/rest/services/geologia/litoestratigrafia_1000000/MapServer/WMTS/tile/1.0.0/geologia_litoestratigrafia_1000000/default/GoogleMapsCompatible/{z}/{y}/{x}.png"    //z-4?
+            ],
+            bounds:[-78, -36, -30, 8],
+            minzoom: 8,       
+            maxzoom: 14,       
+            tileSize: 256,
+            attribution: '<a href="https://www.sgb.gov.br/"> Serviço Geológico do Brasil - CPRM</a>'
+
         },
         
 
@@ -306,6 +324,16 @@ const map_style = {
             maxzoom: 14,
         },
         {
+            id: 'geo_1000_br',
+            type: 'raster',
+            source: 'geo_1000_br',
+            paint: {
+                'raster-opacity': 0.5 // 50% Opacity
+            },
+            minzoom: 8,
+            maxzoom: 14,
+        },
+        {
             id: 'dc_layer_cluster',
             type: 'circle',
             source: 'dc_lyr_src',
@@ -373,6 +401,7 @@ const map_style = {
 
 // Get feture info layers
 const feature_info_layers = [
+    // DE
     {"id":"geo_25_de_by",
         "url": "https://www.lfu.bayern.de/gdi/wms/geologie/dgk25?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=geoleinheit_dgk25&query_layers=geoleinheit_dgk25&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=application/geojson", 
         "fields": ["Geologische Einheit","Gesteinsbeschreibung", "System (ggf. Ärathem)","URI Thesaurus"],
@@ -382,6 +411,7 @@ const feature_info_layers = [
         "info_format":"geojson",
         "bbox":[9, 47.3, 13.8, 50.5] //minx,miny,maxx,maxy
     },
+    // DE_BY
     {"id":"geo_250_de",
         "url": "https://services.bgr.de/wms/geologie/guek250?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=7&query_layers=7&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=text/xml", 
         "fields": ["Legendentext", "Stratigraphie - gesamt", "LithostratigraphieregionaleStratigraphie1", "LithostratigraphieregionaleStratigraphie2"],
@@ -391,6 +421,7 @@ const feature_info_layers = [
         "info_format":"xml",
         "bbox":[5.562778, 47.141228, 15.575523, 55.085090]
     },
+    //AT
     {"id":"geo_500_at",
         "url": "https://gis.geosphere.at/maps/services/geologie/karte_500/MapServer/WMSServer?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=0&query_layers=0&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=text/xml", 
         "fields": ["LEGTEXT_EN","LITHOL_EN","ALTER_EN"], //"ADDTEXT_DE"
@@ -400,8 +431,9 @@ const feature_info_layers = [
         "info_format":"xml",
         "bbox":[8.929691, 45.415079, 17.741731, 49.602938]
     },
+    //FR
     {"id":"geo_1000_fr",
-        "url": "https://geoservices.brgm.fr/geologie?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=LITHO_1M_SIMPLIFIEE&query_layers=LITHO_1M_SIMPLIFIEE&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=1&y=1&height=2&width=2&&I=0&J=1&info_format=application%2Fvnd.ogc.gml", 
+        "url": "https://geoservices.brgm.fr/geologie?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=LITHO_1M_SIMPLIFIEE&query_layers=LITHO_1M_SIMPLIFIEE&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=1&y=1&height=2&width=2&I=0&J=1&info_format=application%2Fvnd.ogc.gml", 
         "fields": ["DESCR","TYPE"],
         "fields_alias": ["Geological Unit", "Lithology"],
         "minzoom":6,
@@ -409,8 +441,9 @@ const feature_info_layers = [
         "info_format":"gml",
         "bbox":[-5.86764, 41.1701, 11.0789, 51.1419]
     },
+    //IT
     {"id":"geo_100_it",
-        "url": "https://sinacloud.isprambiente.it/arcgisgeo/services/geo/SGI_ISPRA_geologia100K/MapServer/WMSServer?request=GetFeatureInfo&version=1.3.0&layers=1&query_layers=1&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=1&y=1&height=2&width=2&&I=0&J=1&info_format=text/xml", 
+        "url": "https://sinacloud.isprambiente.it/arcgisgeo/services/geo/SGI_ISPRA_geologia100K/MapServer/WMSServer?request=GetFeatureInfo&version=1.3.0&layers=1&query_layers=1&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&height=2&width=2&I=0&J=1&info_format=text/xml", 
         "fields": ["NOME_FORMAZIONE","ETA_FORMAZIONE"],
         "fields_alias": ["Geological Unit", "Chronostratigraphy"],
         "minzoom":6,
@@ -418,14 +451,24 @@ const feature_info_layers = [
         "info_format":"xml",
         "bbox":[6.45, 35.2, 19.62, 47.14]
     },
+    // CH
     {"id":"geo_x_ch",
-        "url": "https://wms.geo.admin.ch/?&service=WMS&version=1.3.0&request=GetFeatureInfo&version=1.3.0&layers=ch.swisstopo.geologie-geocover&query_layers=ch.swisstopo.geologie-geocover&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=1&y=1&height=2&width=2&&I=0&J=1&info_format=application%2Fvnd.ogc.gml", 
+        "url": "https://wms.geo.admin.ch/?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=ch.swisstopo.geologie-geocover&query_layers=ch.swisstopo.geologie-geocover&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&height=2&width=2&I=0&J=1&info_format=application%2Fvnd.ogc.gml", 
         "fields": ["ch\\.swisstopo\\.geologie-geocover\\.description_de\\.name","ch\\.swisstopo\\.geologie-geocover\\.litho_de\\.name","ch\\.swisstopo\\.geologie-geocover\\.chrono_de\\.name"],
         "fields_alias": ["Geological Unit", "Lithology", "Chronostratigraphy"],
         "minzoom":6,
         "maxzoom":18,
         "info_format":"gml",
         "bbox":[5.14, 45.39, 11.48, 48.24]
+    },
+    //BR
+    {"id":"geo_1000_br",
+        "url": "https://geoportal.sgb.gov.br/server/services/geologia/litoestratigrafia_1000000/MapServer/WMSServer?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=0&query_layers=0&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&height=2&width=2&I=0&J=1&info_format=text/xml", 
+        "fields": ["Nomedaunidade","Litótipos","Eramínima"],
+        "fields_alias": ["Geological Unit", "Lithology", "Chronostratigraphy"],
+        "minzoom":8,
+        "maxzoom":18,
+        "info_format":"xml",
+        "bbox":[-78, -36, -30, 8]
     }
-
 ]

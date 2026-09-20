@@ -357,6 +357,15 @@ async function get_feature_info(lng,lat,lyr_def){
     }
 
 }
+async function load_gpx(){
+    //TODO
+    // TODO:drop in screen, load gpx as geojson (mobile: button to load gpx? right click menu?)
+    // const gpxResponse = await fetch('path/to/track.gpx');
+    // const gpxText = await gpxResponse.text();
+    // const parser = new DOMParser();
+    // const gpxXml = parser.parseFromString(gpxText, 'text/xml');
+    // make geojson, add points, multiple routes?
+}
 
 function download_profile(out_filename='ele_profile.svg'){
     // Download elevation profile as svg
