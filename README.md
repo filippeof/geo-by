@@ -8,20 +8,20 @@ https://filippeof.github.io/geo-by/
 
 - Data sources:
   -  Drill core data
-      - DE/BY: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de; Lizenz: CC BY 4.0
+      - DE/BY: <a href="www.lfu.bayern.de">  DGK25: Bayerisches Landesamt für Umwelt</a> Lizenz: CC BY 4.0
   
   - Geological maps 
     - Regional maps
-      - DE/BY:  DGK25: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de; Lizenz: CC BY 4.0
+      - DE/BY: <a href="www.lfu.bayern.de">  DGK25: Bayerisches Landesamt für Umwelt</a> Lizenz: CC BY 4.0
     - Overview maps
-      - DE: GÜK250,GK1000 (WMS), (c) BGR, Hannover, 2019; Lizenz: dl-de/by
-      - AT: GK500 GeoSphere Austria; Lizenz: CC BY 4.0
-      - FR: BRGM
-      - IT: ISPRAmbiente
-      - CH: © Data: swisstopo
+      - DE: <a href="https://www.bgr.bund.de/"> GÜK250,GK1000 (WMS), BGR, Hannover, 2019;</a> Lizenz: dl-de/by
+      - AT: <a href="https://www.geosphere.at/de">GK500 GeoSphere Austria</a> Lizenz: CC BY 4.0
+      - FR: <a href="https://www.brgm.fr"> BRGM</a>
+      - IT: <a href="https://www.isprambiente.gov.it/en/projects/soil-and-territory/geosciences-ir"> ISPRAmbiente</a>
+      - CH: <a href="https://www.swisstopo.admin.ch/en"> © Data: swisstopo</a>
+      - BR: <a href="https://www.sgb.gov.br/"> Serviço Geológico do Brasil - CPRM</a>
   
   - Elevation data, Base maps
-    - Geobasisdaten: Bayerische Vermessungsverwaltung – www.geodaten.bayern.de (Daten verändert), Lizenz: CC BY 4.0, © GeoBasis-DE / BKG 2022 (Daten verändert)
     - OSM basemap
       - © OpenStreetMap contributors
     - Satellite Imagery

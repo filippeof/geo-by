@@ -166,13 +166,7 @@ const map_style = {
             tileSize: 256,
             attribution: '© OpenStreetMap contributors'
         },
-        // "by_relief": {
-        //     type: 'raster',
-        //     tiles: [
-        //         'https://geoservices.bayern.de/od/wms/dgm/v1/relief?&service=WMS&request=GetMap&layers=by_relief_schraeglicht&styles=&format=image%2Fpng&transparent=true&version=1.1.1&backgroundColor=%23FFFFFF&width=256&height=256&srs=EPSG%3A3857&bbox={bbox-epsg-3857}'
-        //     ],
-        //     tileSize: 256
-        // },
+
         'mapterhorn_terrain_src': {
             type: 'raster-dem',
             url: 'https://tiles.mapterhorn.com/tilejson.json',
@@ -187,17 +181,6 @@ const map_style = {
         }
     },
     layers: [
-        // {
-        //     id: 'by_relief',
-        //     type: 'raster',
-        //     source: 'by_relief',
-        //     paint: {}
-        // },
-        // {
-        //     id: 'by_relief',
-        //     source: 'by_relief',
-        //     type: 'hillshade'
-        // },
         {
             id: 'mapterhorn_hillshade',
             type: 'hillshade',
