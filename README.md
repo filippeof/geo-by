@@ -18,17 +18,17 @@ https://filippeof.github.io/geo-by/
 
 - Data sources:
   -  Drill core data
-      - DE/BY: <a href="www.lfu.bayern.de">  DGK25: Bayerisches Landesamt für Umwelt</a> Lizenz: CC BY 4.0
+      - DE/BY: [DGK25: Bayerisches Landesamt für Umwelt](www.lfu.bayern.de) Lizenz: CC BY 4.0
   
   - Geological maps
-      - AT: <a href="https://www.geosphere.at/de">GK500 GeoSphere Austria</a> Lizenz: CC BY 4.0
-      - BR: <a href="https://www.sgb.gov.br/"> Serviço Geológico do Brasil - CPRM</a>
-      - CH: <a href="https://www.swisstopo.admin.ch/en"> © Data: swisstopo</a>
-      - CZ: <a href="https://cgs.gov.cz/"> © ČGS</a>
-      - DE: <a href="https://www.bgr.bund.de/"> GÜK250,GK1000 (WMS), BGR, Hannover, 2019;</a> Lizenz: dl-de/by
-        - DE/BY: <a href="www.lfu.bayern.de">  DGK25: Bayerisches Landesamt für Umwelt</a> Lizenz: CC BY 4.0
-      - FR: <a href="https://www.brgm.fr"> BRGM</a>
-      - IT: <a href="https://www.isprambiente.gov.it/en/projects/soil-and-territory/geosciences-ir"> ISPRAmbiente</a>
+      - AT: [GK500 GeoSphere Austria](https://www.geosphere.at/de) Lizenz: CC BY 4.0
+      - BR: [Serviço Geológico do Brasil - CPRM](https://www.sgb.gov.br/)
+      - CH: [© Data: swisstopo](https://www.swisstopo.admin.ch/en)
+      - CZ: [© ČGS](https://cgs.gov.cz/)
+      - DE: [GÜK250,GK1000 (WMS), BGR, Hannover, 2019](https://www.bgr.bund.de/) Lizenz: dl-de/by
+        - DE/BY: [DGK25: Bayerisches Landesamt für Umwelt](www.lfu.bayern.de) Lizenz: CC BY 4.0
+      - FR: [BRGM](https://www.brgm.fr)
+      - IT: [ISPRAmbiente](https://www.isprambiente.gov.it/en/projects/soil-and-territory/geosciences-ir)
   
   - Base maps
     - OSM basemap
