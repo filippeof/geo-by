@@ -281,7 +281,7 @@ async function get_feature_info(lng,lat,lyr_def){
             throw new Error(`Response status: ${response.status}`);
         }
         const response_txt = await response.text();
-        console.log(lyr_id,response_txt)
+        // console.log(lyr_id,response_txt)
         
         let feature_props = {};
         let has_match = false
@@ -357,15 +357,178 @@ async function get_feature_info(lng,lat,lyr_def){
     }
 
 }
-async function load_gpx(){
-    //TODO
-    // TODO:drop in screen, load gpx as geojson (mobile: button to load gpx? right click menu?)
-    // const gpxResponse = await fetch('path/to/track.gpx');
-    // const gpxText = await gpxResponse.text();
-    // const parser = new DOMParser();
-    // const gpxXml = parser.parseFromString(gpxText, 'text/xml');
-    // make geojson, add points, multiple routes?
+async function kml_to_geojson(gpx_txt){
+    // Convert kml linestring to geojson
+    const parser = new DOMParser();
+    const gpxXml = parser.parseFromString(gpx_txt, 'text/xml');
+    // Get placemarks (can be pt, line,poly..)
+    const kml_placemarks =  gpxXml.querySelectorAll("Placemark");
+    // Checks: has placemark, at least one pmk is line
+    if (!kml_placemarks | kml_placemarks.length==0) {
+        alert("KML has no placemarks!")
+        return
+    }
+    const n_line_strings = gpxXml.querySelectorAll("LineString").length;
+    if (n_line_strings.length==0) {
+        alert("KML has no Lines (LineString)!")
+        return
+    }
+    // Make geojson: Each linestring: one feature
+    const track_geojson = {
+        'type': 'FeatureCollection',
+        'features': [ ]
+    };
+    for (let ii = 0; ii < kml_placemarks.length; ii++) {
+        const pmk = kml_placemarks[ii];
+        const pmk_name = pmk.querySelector("name").innerHTML;
+        // pmk_dsc = description
+        // Get linestring: if none try next placemark
+        const pmk_linestring = pmk.querySelector("LineString");
+        if (!pmk_linestring) continue
+        // Get coordinates: lon,lat,[ele] lon,lat,[ele..]
+        const pmk_pts = pmk_linestring.innerHTML.trim().split(/\s+/);
+        let pmk_coords = [];
+        // Get points coords
+        for (let jj = 0; jj < pmk_pts.length; jj++){
+            const pt = pmk_pts[jj].split(",");
+            pmk_coords.push([parseFloat(pt[0]), parseFloat(pt[1])]); //ele:pt[2]
+        }
+        // add feature
+        track_geojson["features"].push( {
+            'type': 'Feature',
+            "properties":{
+                "name": pmk_name
+            },
+            'geometry': {
+                'type': 'LineString',
+                'coordinates': pmk_coords
+            }
+        });
+    }
+    return track_geojson
 }
+
+async function gpx_to_geojson(gpx_txt){
+    //Convert gpx track/ routes to geojson line
+    const parser = new DOMParser();
+    const gpxXml = parser.parseFromString(gpx_txt, 'text/xml');
+    // make geojson, add points, multiple routes?
+    const gpx_routes =  gpxXml.querySelectorAll("rte");
+    const gpx_tracks =  gpxXml.querySelectorAll("trk");
+    const track_geojson = {
+        'type': 'FeatureCollection',
+        'features': [ ]
+    };
+    // Routes
+    for (let ii = 0; ii < gpx_routes.length; ii++) {
+        const rte = gpx_routes[ii];
+        const rte_name = rte.querySelector("name").innerHTML;
+        const rte_pts = rte.querySelectorAll("rtept");
+        let rte_coords = [];
+        // Route points
+        for (let jj = 0; jj < rte_pts.length; jj++){
+            const pt = rte_pts[jj];
+            rte_coords.push([parseFloat(pt.getAttribute("lon")), parseFloat(pt.getAttribute("lat"))]);
+        }
+        track_geojson["features"].push( {
+            'type': 'Feature',
+            "properties":{
+                "name": rte_name
+            },
+            'geometry': {
+                'type': 'LineString',
+                'coordinates': rte_coords
+            }
+        });
+    }
+    //Tracks
+    for (let ii = 0; ii < gpx_tracks.length; ii++) {
+        const trk = gpx_tracks[ii];
+        const trk_name = trk.querySelector("name").innerHTML;
+        const trk_segments = trk.querySelectorAll("trkseg");
+        //Track segments
+        for (let jj = 0; jj < trk_segments.length; jj++) {
+            const trk_seg = trk_segments[jj];
+            const trk_pts = trk_seg.querySelectorAll("trkpt");
+            let trk_seg_coords = [];
+            // Track points
+            for (let kk = 0; kk < trk_pts.length; kk++) {
+                const pt = trk_pts[kk];
+                trk_seg_coords.push([parseFloat(pt.getAttribute("lon")), parseFloat(pt.getAttribute("lat"))]);
+            }
+            track_geojson["features"].push({
+                'type': 'Feature',
+                "properties":{
+                    "name": `${trk_name} (${jj+1}/${trk_segments.length})`
+                },
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': trk_seg_coords
+                }
+            })
+        }
+    }
+
+    return track_geojson
+}
+
+function drop_file_handler(event,map) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    const file = files[0];
+    if (!file) return;
+    const file_format = file.name.split(".").pop().toLowerCase();
+    console.log(file_format)
+    if (!file_format | !["gpx","geojson"].includes(file_format)) return;
+    
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        let geojson_data = {}
+        if (file_format == "gpx") {
+            const gpx_txt = e.target.result;
+            geojson_data = await gpx_to_geojson(gpx_txt);
+        }
+        else if (file_format == "geojson") {
+            geojson_data = e.target.result;
+        }
+        else if (file_format == "kml") {
+            const kml_txt = e.target.result;
+            alert("KML not yet implemented")
+            // TODO
+        }
+        else{
+            alert("Unsupported file format. Please drop a GPX or GeoJSON file.");
+        }
+        // Add geojson to map
+        // Add source/ layer
+        map.getSource('custom_linestring_src').setData(geojson_data);
+
+        // map.addSource('gpx_profile', {
+        //         'type': 'geojson',
+        //         'data': geojson_data
+        //     });
+        // map.addLayer({
+        //     'id': 'gpx_profile',
+        //     'type': 'line',
+        //     'source': 'gpx_profile',
+        //     'paint': {
+        //         'line-color': '#831111',
+        //         'line-opacity': 0.7,
+        //         'line-width': 3
+        //     }
+        // });
+        // zoom to track/route
+        if(geojson_data["features"].length>0){
+            const first_coord = geojson_data["features"][0]['geometry']['coordinates'][0];
+            map.flyTo({
+                center: [first_coord[0], first_coord[1]], // [lng, lat]
+                zoom: 12
+            });
+        }
+    }
+    reader.readAsText(file);
+
+    }
 
 function download_profile(out_filename='ele_profile.svg'){
     // Download elevation profile as svg

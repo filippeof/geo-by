@@ -1,9 +1,9 @@
-body { margin: 0; padding: 0; }
+body { margin: 0; padding: 0;}
 html, body { height: 100%; display: flex; flex-direction: column;}
 #map { height: 100% }
 
 /* Elevation Profile */
-#profile_container { height: 30% }
+/* #ele_profile_container {max-height: 25vh} */
 .ele_profile_txt { font-size: 14px; fill: black; font-weight: bold; }
 rect{
     stroke-width:1px;

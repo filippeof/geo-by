@@ -4,11 +4,11 @@ const layer_control_list = [
     {id: "basemap_overview", id_list: ['osm-layer'], name: "OSM", visible: true},
     {id: "satellite", id_list: ['satellite'], name: "Satellite", visible: false},
     // {id: , id_list: 'by_webkarte', name: "BY Webkarte", visible: false},
-    {id: "geo_regional", id_list: ['geo_25_de_by',"geo_50_fr","geo_100_it","geo_x_ch"], name: "Geo: Regional", visible: true},
-    {id: "geo_overview", id_list: ["geo_250_de","geo_1000_de","geo_1000_fr", "geo_500_at","geo_500_it","geo_1000_br"], name: "Geo: Overview", visible: true},
+    {id: "geo_regional", id_list: ['geo_25_de_by',"geo_50_cz","geo_50_fr","geo_100_it","geo_x_ch"], name: "Geo: Regional", visible: true},
+    {id: "geo_overview", id_list: ["geo_250_de","geo_1000_de",,"geo_500_cz","geo_1000_fr", "geo_500_at","geo_500_it","geo_1000_br"], name: "Geo: Overview", visible: true},
     // {id: , id_list: 'profile-layer', name: "Profile", visible: true},
     // {id: , id_list: 'pt-layer', name: "Point", visible: true},
-    {id: "drill_core_pt", id_list: ['dc-layer','dc-layer-cluster'], name: "Drill cores", visible: true} 
+    {id: "drill_core_pt", id_list: ['dc_layer','dc_layer_cluster'], name: "Drill cores", visible: true} 
 ];
 const map_style = {
     version: 8,
@@ -25,7 +25,11 @@ const map_style = {
             clusterMaxZoom: 10,       
             clusterRadius: 60,         
             attribution: '<a href="https://www.lfu.bayern.de">Bohrungen, Bayerisches Landesamt für Umwelt (Daten verändert)</a>'
-        },  
+        }, 
+        "custom_linestring_src":{
+            type: 'geojson',
+            data: {}//geojson_data
+        }, 
         // DE
         "geo_250_de":{
             type: 'raster',
@@ -47,7 +51,7 @@ const map_style = {
             tileSize: 256,
             attribution: 'GK1000 (WMS), (c) BGR, Hannover, 2019'
         },
-        //  BY 
+        //  DE/BY 
         "geo_25_de_by":{
             type: 'raster',
             tiles: [
@@ -59,6 +63,27 @@ const map_style = {
             tileSize: 256,
             attribution: '<a href="https://www.lfu.bayern.de">DGK25, Bayerisches Landesamt für Umwelt</a>'
 
+        },
+        // CZ
+        "geo_50_cz":{
+            type: 'raster',
+            tiles: [
+            "https://mapy.geology.cz/arcgis/services/Geologie/geologicka_mapa50/MapServer/WMSServer?service=WMS&request=GetMap&layers=0,1,2&styles=&format=image%2Fpng&transparent=true&version=1.3.0&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}",
+        ],
+            bounds:[11.939, 48.23, 18.96, 51.36],
+            minzoom: 10,       
+            tileSize: 256,
+            attribution: '© ČGS'
+        },
+        "geo_500_cz":{
+            type: 'raster',
+            tiles: [
+            "https://mapy.geology.cz/arcgis/services/Geologie/geologicka_mapa500/MapServer/WMSServer?service=WMS&request=GetMap&layers=0,1,5,6,7&styles=&format=image%2Fpng&transparent=true&version=1.3.0&backgroundColor=%23FFFFFF&width=256&height=256&crs=EPSG%3A3857&bbox={bbox-epsg-3857}"
+            ],
+            bounds:[11.939, 48.23, 18.96, 51.36],
+            minzoom: 6,       
+            tileSize: 256,
+            attribution: '© ČGS'
         },
         // AT
         "geo_500_at":{
@@ -247,6 +272,26 @@ const map_style = {
             maxzoom: 10,
         },
         {
+            id: 'geo_50_cz',
+            type: 'raster',
+            source: 'geo_50_cz',
+            paint: {
+                'raster-opacity': 0.5 // 50% Opacity
+            },
+            minzoom: 10,
+            maxzoom: 14,
+        },
+        {
+            id: 'geo_500_cz',
+            type: 'raster',
+            source: 'geo_500_cz',
+            paint: {
+                'raster-opacity': 0.5 // 50% Opacity
+            },
+            minzoom: 8,
+            maxzoom: 10,
+        },
+        {
             id: 'geo_500_at',
             type: 'raster',
             source: 'geo_500_at',
@@ -338,7 +383,7 @@ const map_style = {
             },
         },
         {
-            id: 'dc-layer',
+            id: 'dc_layer',
             type: 'circle',
             source: 'dc_lyr_src',
             filter: ['!has', 'point_count'],
@@ -358,7 +403,7 @@ const map_style = {
                 'line-cap': 'round'
             },
             paint: {
-                'line-color': '#00000080',
+                'line-color': '#e2000080',
                 'line-width': profile_w_px
             },
             filter: ['==', '$type', 'LineString']
@@ -372,7 +417,21 @@ const map_style = {
                 'circle-color': '#02c402' 
             },
             filter: ['==', '$type', 'Point']
-        }
+        },
+        {
+            id: 'custom_linestring_lyr',
+            type: 'line',
+            source: 'custom_linestring_src',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#900090',
+                'line-width': profile_w_px
+            },
+            filter: ['==', '$type', 'LineString']
+        },
     ],
     terrain: {
         source: 'mapterhorn_terrain_src',
@@ -402,7 +461,17 @@ const feature_info_layers = [
         "minzoom":6,
         "maxzoom":12,
         "info_format":"xml",
-        "bbox":[5.562778, 47.141228, 15.575523, 55.085090]
+        "bbox":[5.562, 47.14, 15.58, 55.09]
+    },
+    //CZ
+    {"id":"geo_500_cz",
+        "url": "https://mapy.geology.cz/arcgis/services/Geologie/geologicka_mapa500/MapServer/WMSServer?service=WMS&request=GetFeatureInfo&version=1.3.0&layers=0&query_layers=0&styles=&bbox={bbox}&crs=EPSG%3A4326&feature_count=1&x=5&y=5&height=10&width=10&info_format=text/xml", 
+        "fields": ["legenda oddělení","Hornina","Éra"],
+        "fields_alias": ["Geological Unit", "Lithology", "Chronostratigraphy"],
+        "minzoom":10,
+        "maxzoom":18,
+        "info_format":"xml",
+        "bbox":[11.939, 48.23, 18.96, 51.36] //minx,miny,maxx,maxy
     },
     //AT
     {"id":"geo_500_at",
@@ -412,7 +481,7 @@ const feature_info_layers = [
         "minzoom":6,
         "maxzoom":18,
         "info_format":"xml",
-        "bbox":[8.929691, 45.415079, 17.741731, 49.602938]
+        "bbox":[8.929, 45.415, 17.742, 49.603]
     },
     //FR
     {"id":"geo_1000_fr",
@@ -422,7 +491,7 @@ const feature_info_layers = [
         "minzoom":6,
         "maxzoom":18,
         "info_format":"gml",
-        "bbox":[-5.86764, 41.1701, 11.0789, 51.1419]
+        "bbox":[-5.867, 41.17, 11.08, 51.142]
     },
     //IT
     {"id":"geo_100_it",

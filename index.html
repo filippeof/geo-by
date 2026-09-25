@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<!-- Geological mpas in 3d and elevation profile +Drill cores
+<!-- Geological maps in 3d and elevation profile +Drill cores
+ (C) Filippe F. 2026
+ MIT License
 Dependencies:
  https://github.com/maplibre/maplibre-gl-js/
  https://github.com/Turfjs/turf     
@@ -129,10 +131,9 @@ Dependencies:
 
         
         //POPUP DRILL CORES
-        map.on('click', 'dc-layer', (e) => {
+        map.on('click', 'dc_layer', (e) => {
             e.preventDefault(); //prevent handling general map click
             e._click_handled = true; 
-            console.log("clicked",e)
             const feat = e.features[0]
             const coordinates = feat.geometry.coordinates.slice();
             const obj_id = feat.properties["oid"];
@@ -146,13 +147,13 @@ Dependencies:
 
         });
         //  cursor to pointer when entering dc point
-        map.on('mouseenter', 'dc-layer', () => {
+        map.on('mouseenter', 'dc_layer', () => {
             if (!document.profile_tool_active) {
                 map.getCanvas().style.cursor = 'pointer';
             }
         });
         // Change it back when it leaves.
-        map.on('mouseleave', 'dc-layer', () => {
+        map.on('mouseleave', 'dc_layer', () => {
             if (document.profile_tool_active) {
                 map.getCanvas().style.cursor = 'crosshair';
             }
@@ -189,7 +190,6 @@ Dependencies:
                 if (clickedCoords.length == 1) {
                     geojson_profile.features[1].geometry.coordinates = lngLat; // Update start point
                     map.getSource('profile_lyr_src').setData(geojson_profile);
-                    
                 }
                 // Two points clicked: update the profile line, create elevation profile
                 else if (clickedCoords.length == 2) {
@@ -274,6 +274,26 @@ Dependencies:
             //         JSON.stringify(e.lngLat.wrap())}`;
             // });
 
+        // Drop gpx, kml on map
+        window.addEventListener("drop", (e) => {
+            e.preventDefault();
+        });
+        const map_container = document.getElementById("map")
+
+        map_container.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            });
+
+        window.addEventListener("dragover", (e) => {
+            e.preventDefault();
+        });
+
+        map_container.addEventListener("drop", (e)=> {
+            drop_file_handler(e,map);
+        });
+
+    
+        // load_gpx(map)
     </script>
   </body>
 </html>
