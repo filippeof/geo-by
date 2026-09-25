@@ -1,5 +1,3 @@
-[![CC BY 4.0][cc-by-shield]][cc-by]
-
 GEO3: 3D Geological map and Drill core profiles
 
 https://filippeof.github.io/geo-by/
