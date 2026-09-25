@@ -11,7 +11,7 @@ https://filippeof.github.io/geo-by/
   - Create elevation profile (Whole World)
   - Geological maps and Feature Info (Austria, Brazil, Switzerland, Czechia, Germany, France and  Italy) 
   - Drill core profiles (DE/BY)
-  - Drag and drop gpx, kml
+  - Add custom vector layer: Drag and drop gpx, kml or geojson file
   - 3D Basemap, Hillsahde, Satellite layers
 
 - Data sources:

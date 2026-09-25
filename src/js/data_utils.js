@@ -357,10 +357,10 @@ async function get_feature_info(lng,lat,lyr_def){
     }
 
 }
-async function kml_to_geojson(gpx_txt){
+async function kml_to_geojson(kml_txt){
     // Convert kml linestring to geojson
     const parser = new DOMParser();
-    const gpxXml = parser.parseFromString(gpx_txt, 'text/xml');
+    const gpxXml = parser.parseFromString(kml_txt, 'text/xml');
     // Get placemarks (can be pt, line,poly..)
     const kml_placemarks =  gpxXml.querySelectorAll("Placemark");
     // Checks: has placemark, at least one pmk is line
@@ -380,18 +380,21 @@ async function kml_to_geojson(gpx_txt){
     };
     for (let ii = 0; ii < kml_placemarks.length; ii++) {
         const pmk = kml_placemarks[ii];
-        const pmk_name = pmk.querySelector("name").innerHTML;
+        const pmk_name = pmk.querySelector("name")?.innerHTML ?? "";
         // pmk_dsc = description
         // Get linestring: if none try next placemark
         const pmk_linestring = pmk.querySelector("LineString");
         if (!pmk_linestring) continue
         // Get coordinates: lon,lat,[ele] lon,lat,[ele..]
-        const pmk_pts = pmk_linestring.innerHTML.trim().split(/\s+/);
-        let pmk_coords = [];
+        const pmk_coords = pmk_linestring.querySelector("coordinates");
+        if (!pmk_coords) continue
+        const pmk_pts = pmk_coords.innerHTML.trim().split(/\s+/);
+        console.log(pmk_pts)
+        let pmk_coord_list = [];
         // Get points coords
         for (let jj = 0; jj < pmk_pts.length; jj++){
             const pt = pmk_pts[jj].split(",");
-            pmk_coords.push([parseFloat(pt[0]), parseFloat(pt[1])]); //ele:pt[2]
+            pmk_coord_list.push([parseFloat(pt[0].trim()), parseFloat(pt[1].trim())]); //ele:pt[2]
         }
         // add feature
         track_geojson["features"].push( {
@@ -401,7 +404,7 @@ async function kml_to_geojson(gpx_txt){
             },
             'geometry': {
                 'type': 'LineString',
-                'coordinates': pmk_coords
+                'coordinates': pmk_coord_list
             }
         });
     }
@@ -479,8 +482,10 @@ function drop_file_handler(event,map) {
     if (!file) return;
     const file_format = file.name.split(".").pop().toLowerCase();
     console.log(file_format)
-    if (!file_format | !["gpx","geojson"].includes(file_format)) return;
-    
+    if (!file_format | !["gpx","geojson","kml"].includes(file_format)) 
+        {alert(`Format ${file_format} not allowed `)
+            return
+        }
     const reader = new FileReader();
     reader.onload = async function (e) {
         let geojson_data = {}
@@ -493,11 +498,10 @@ function drop_file_handler(event,map) {
         }
         else if (file_format == "kml") {
             const kml_txt = e.target.result;
-            alert("KML not yet implemented")
-            // TODO
+            geojson_data = await kml_to_geojson(kml_txt);
         }
         else{
-            alert("Unsupported file format. Please drop a GPX or GeoJSON file.");
+            alert("Unsupported file format. Please drop a GPX,KML or GeoJSON file.");
         }
         // Add geojson to map
         // Add source/ layer
@@ -524,6 +528,9 @@ function drop_file_handler(event,map) {
                 center: [first_coord[0], first_coord[1]], // [lng, lat]
                 zoom: 12
             });
+        }
+        else{
+            alert("No features found in the file.");
         }
     }
     reader.readAsText(file);
