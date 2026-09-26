@@ -1,6 +1,6 @@
 GEO3: 3D Geological map and Drill core profiles
 
-https://filippeof.github.io/geo-by/
+https://filippeof.github.io/geo3/
 
 <a href="https://filippeof.github.io/geo3/">
   <img src="src/img/example.jpg" alt="Example usage" width="600px" />
